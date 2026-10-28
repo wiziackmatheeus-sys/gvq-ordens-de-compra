@@ -209,6 +209,19 @@
                 </div>
                 <p id="status-importar" class="ajuda" role="status"></p>
             </section>
+            <section class="card" id="card-corte" data-master hidden>
+                <div class="card-cabecalho">
+                    <div>
+                        <h2 class="card-titulo">Corte pela planilha de OCs</h2>
+                        <p class="card-subtitulo">Escolha a planilha <strong>.xlsx</strong> de OCs (aba <em>Banco de Dados OC</em>). Todas as OCs dela são gravadas como <strong>Finalizadas</strong>, com viabilidade <strong>Concluída</strong>, substituindo as que já existem. OCs do sistema com número depois da última da planilha são apagadas, e a próxima OC passa a ser a seguinte. Só o Master vê esta opção.</p>
+                    </div>
+                </div>
+                <div class="linha">
+                    <input id="arquivo-corte" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                    <button id="btn-corte" class="btn btn-primario" type="button" disabled>Fazer o corte</button>
+                </div>
+                <p id="status-corte" class="ajuda" role="status"></p>
+            </section>
             <div id="grade-cadastros" class="grade-cadastros"></div>
         </section>
 
@@ -288,7 +301,10 @@
             <p id="aviso-modelo-oc" class="ajuda" role="status"></p>
             <div class="form-acoes">
                 <button type="button" id="btn-imprimir-oc" class="btn btn-secundario">Imprimir / PDF</button>
-                <button type="button" id="btn-copiar-oc" class="btn btn-secundario">Copiar modelo</button>
+                <button type="button" id="btn-baixar-oc" class="btn btn-secundario">
+                    <svg class="icon"><use href="../assets/img/icones.svg#download"></use></svg>Baixar imagem
+                </button>
+                <button type="button" id="btn-copiar-oc" class="btn btn-secundario">Copiar imagem</button>
                 <button type="button" id="btn-email-oc" class="btn btn-primario">Enviar por e-mail</button>
             </div>
         </form>

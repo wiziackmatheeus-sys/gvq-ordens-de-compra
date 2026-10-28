@@ -34,6 +34,15 @@ service cloud.firestore {
         // O preço só existe em Compra.
         && ((d.tipo == 'Compra' && d.preco is number && d.preco > 0) || (d.tipo != 'Compra' && d.preco == null));
     }
+    // Corte pela planilha de OCs (aba Cadastros, só Master): a OC é gravada inteira, Finalizada.
+    function corteValido() {
+      return master() && request.resource.data.fonte == 'planilha'
+        && request.resource.data.keys().hasOnly(['fonte', 'numero', 'rotulo', 'status', 'viabilidade', 'tipo', 'sexo', 'raca', 'quantidade', 'origens',
+          'destino', 'proprietario', 'dataPrevista', 'trava', 'alerta', 'importadaPor', 'importadaEm'])
+        && request.resource.data.numero is int && request.resource.data.status == 'Finalizado' && request.resource.data.viabilidade == 'Concluída'
+        && request.resource.data.origens is list && request.resource.data.origens.size() <= 50
+        && request.resource.data.importadaPor == meuLogin() && request.resource.data.importadaEm == request.time;
+    }
     function assinaturaAnalise(d) {
       return d.analisadoPor == meuLogin() && d.analisadoPorNome == eu().nome && d.analisadoEm == request.time;
     }
@@ -150,8 +159,11 @@ service cloud.firestore {
             && resource.data.status in ['Em Andamento', 'Pendente', 'Aberto'] && request.resource.data.status == 'Cancelado'
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['viabilidade']))
         );
-      // Analista ou Master exclui só OC cancelada (o número volta pela lista liberados do contador).
-      allow delete: if analista() && resource.data.status == 'Cancelado';
+      // Corte pela planilha (só Master): grava ou regrava a OC inteira como Finalizada.
+      allow create, update: if corteValido();
+      // Analista ou Master exclui só OC cancelada (o número volta pela lista liberados do contador);
+      // no corte, o Master apaga também as OCs depois da última da planilha.
+      allow delete: if (analista() && resource.data.status == 'Cancelado') || master();
     }
 
     match /config/contador {
@@ -175,6 +187,10 @@ service cloud.firestore {
           && request.resource.data.liberados == resource.data.liberados.removeAll([request.resource.data.ultimoReuso])
           && !exists(caminho('ocs', string(request.resource.data.ultimoReuso)))
           && existsAfter(caminho('ocs', string(request.resource.data.ultimoReuso))))
+        // Corte pela planilha (só Master): a próxima OC passa a ser a seguinte à última da planilha.
+        || (master() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proxima', 'liberados'])
+          && request.resource.data.proxima is int && request.resource.data.proxima > 0
+          && request.resource.data.liberados is list)
       );
       allow create, delete: if false;
     }
