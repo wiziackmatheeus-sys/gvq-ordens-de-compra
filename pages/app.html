@@ -75,12 +75,12 @@
                         <input id="f-data" name="dataPrevista" type="date" required>
                     </div>
                     <div class="form-group">
-                        <label for="f-origem">Origem <span class="obrigatorio">*</span></label>
-                        <input id="f-origem" name="origem" list="lista-origens" required autocomplete="off">
+                        <label for="f-origem"><span id="rotulo-origem">Origem</span> <span class="obrigatorio">*</span></label>
+                        <input id="f-origem" name="origem" required autocomplete="off">
                     </div>
                     <div class="form-group">
                         <label for="f-destino">Fazenda de destino <span class="obrigatorio">*</span></label>
-                        <input id="f-destino" name="destino" list="lista-fazendas" required autocomplete="off">
+                        <input id="f-destino" name="destino" required autocomplete="off">
                     </div>
                     <div class="form-group" id="grupo-preco" hidden>
                         <label for="f-preco">Preço R$/@ <span class="obrigatorio">*</span></label>
@@ -274,9 +274,6 @@
             </div>
         </form>
     </dialog>
-
-    <datalist id="lista-origens"></datalist>
-    <datalist id="lista-fazendas"></datalist>
 
     <script type="module" src="../js/app.js"></script>
 </body>

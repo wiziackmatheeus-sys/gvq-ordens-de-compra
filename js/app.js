@@ -145,15 +145,55 @@ function preencherSelect(select, itens, rotuloVazio = 'Selecione...') {
     select.value = atual;
 }
 
+const ordenar = l => [...l].sort(compararNomes);
+// Origem pode ser fornecedor, outra fazenda ou uma das fazendas de destino (transferência).
+const origensSugeridas = () => ordenar(new Set([...estado.listas.origens, ...estado.listas.fazendas]));
+const fazendasSugeridas = () => ordenar(estado.listas.fazendas);
+
 function atualizarListas() {
-    const ordenar = l => [...l].sort(compararNomes);
     preencherSelect($('f-raca'), ordenar(estado.listas.racas));
     preencherSelect($('f-responsavel'), ordenar(estado.listas.responsaveis));
-    // Origem pode ser fornecedor, outra fazenda ou uma das fazendas de destino (transferência).
-    const origens = [...new Set([...estado.listas.origens, ...estado.listas.fazendas])];
-    $('lista-origens').innerHTML = ordenar(origens).map(i => `<option value="${escapar(i)}">`).join('');
-    $('lista-fazendas').innerHTML = ordenar(estado.listas.fazendas).map(i => `<option value="${escapar(i)}">`).join('');
     if (ehAnalista()) renderCadastros();
+}
+
+// Lista de sugestões própria: o <datalist> do navegador nem sempre abre e não ignora acentos.
+// Abre ao clicar ou digitar e filtra por partes do nome, sem diferenciar acentos e maiúsculas.
+function sugerir(input, itens) {
+    const lista = document.createElement('ul');
+    lista.className = 'sugestoes';
+    lista.hidden = true;
+    input.parentElement.classList.add('com-sugestoes');
+    input.after(lista);
+    input.setAttribute('autocomplete', 'off');
+    let atual = -1;
+    const marcar = i => {
+        lista.children[atual]?.classList.remove('ativa');
+        atual = i;
+        lista.children[atual]?.classList.add('ativa');
+        lista.children[atual]?.scrollIntoView({ block: 'nearest' });
+    };
+    const abrir = () => {
+        const achados = input.readOnly ? [] : itens().filter(i => contemTermos(i, input.value)).slice(0, 60);
+        lista.innerHTML = achados.map(i => `<li>${escapar(i)}</li>`).join('');
+        lista.hidden = !achados.length;
+        atual = -1;
+    };
+    const escolher = li => { input.value = li.textContent; lista.hidden = true; input.classList.remove('campo-invalido'); };
+    input.addEventListener('focus', abrir);
+    input.addEventListener('input', abrir);
+    input.addEventListener('blur', () => { lista.hidden = true; });
+    lista.addEventListener('mousedown', e => {
+        const li = e.target.closest('li');
+        if (li) { e.preventDefault(); escolher(li); }
+    });
+    input.addEventListener('keydown', e => {
+        if (lista.hidden) { if (e.key === 'ArrowDown') abrir(); return; }
+        const n = lista.children.length;
+        if (e.key === 'ArrowDown') { e.preventDefault(); marcar((atual + 1) % n); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); marcar((atual - 1 + n) % n); }
+        else if (e.key === 'Enter' && atual >= 0) { e.preventDefault(); escolher(lista.children[atual]); }
+        else if (e.key === 'Escape') lista.hidden = true;
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +212,10 @@ function montarFormulario() {
         if (compra) origem.value = 'Compra';
         else if (origem.readOnly) origem.value = '';
         origem.readOnly = compra;
+        $('rotulo-origem').textContent = valor === 'Transferência' ? 'Fazenda de origem' : 'Origem';
     });
+    sugerir($('f-origem'), origensSugeridas);
+    sugerir($('f-destino'), fazendasSugeridas);
     criarOpcoes($('f-sexo'), SEXOS);
     criarOpcoes($('f-proprietario'), PROPRIETARIOS);
     $('f-solicitante').value = estado.usuario.nome;
@@ -346,7 +389,7 @@ function linhaOrigem(o = {}) {
     const div = document.createElement('div');
     div.className = 'origem-linha';
     div.innerHTML = `
-        <div class="form-group"><label>Origem</label><input data-o="origem" list="lista-origens" autocomplete="off" value="${escapar(o.origem ?? '')}"></div>
+        <div class="form-group"><label>Origem</label><input data-o="origem" value="${escapar(o.origem ?? '')}"></div>
         <div class="form-group"><label>Quantidade</label><input data-o="quantidade" type="number" min="1" step="1" inputmode="numeric" value="${o.quantidade ?? ''}"></div>
         <div class="form-group"><label>Sequência</label><input data-o="sequencia" placeholder="1 a 50" value="${escapar(o.sequencia ?? '')}"></div>
         <div class="form-group"><label>R$/@</label><input data-o="preco" inputmode="decimal" placeholder="0,00" value="${o.preco != null ? formatarPreco(o.preco) : ''}"></div>
@@ -355,6 +398,7 @@ function linhaOrigem(o = {}) {
         if ($('lista-origens-oc').children.length > 1) { div.remove(); atualizarTotalOrigens(); }
     };
     div.querySelector('[data-o="quantidade"]').addEventListener('input', atualizarTotalOrigens);
+    sugerir(div.querySelector('[data-o="origem"]'), origensSugeridas);
     $('lista-origens-oc').appendChild(div);
 }
 

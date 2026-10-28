@@ -53,6 +53,12 @@ td strong, .col-destaque { color: var(--indigo-900); }
 .opcoes.campo-invalido .opcao { border-color: var(--perigo-600); }   /* o grupo não tem borda: destaca os botões */
 .obrigatorio { color: var(--perigo-600); }
 
+/* Lista de sugestões de Origem e Fazenda de destino (ver sugerir() em app.js) */
+.com-sugestoes { position: relative; }
+.sugestoes { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none; max-height: 240px; overflow-y: auto; background: #fff; border: 1px solid var(--cor-borda-forte); border-radius: var(--raio); box-shadow: var(--sombra-md); }
+.sugestoes li { padding: 8px 10px; border-radius: 6px; font-size: 14px; color: var(--indigo-900); cursor: pointer; }
+.sugestoes li:hover, .sugestoes li.ativa { background: var(--cinza-100); }
+
 /* Tabelas */
 .tabela-ocs { max-height: 62vh; }
 .acoes-linha { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
