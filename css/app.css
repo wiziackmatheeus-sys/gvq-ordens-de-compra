@@ -65,6 +65,7 @@ td strong, .col-destaque { color: var(--indigo-900); }
 
 /* Tabelas */
 .tabela-ocs { max-height: 62vh; }
+.tabela-ocs .texto-cortado { max-width: 26ch; }   /* OCs com várias origens não esticam a coluna; a lista toda fica no title */
 .acoes-linha { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
 .select-status { height: 32px; padding: 0 28px 0 10px; border: 1px solid var(--cor-borda-forte); border-radius: 8px; background: #fff; font-size: 13px; cursor: pointer; }
 .motivo { display: block; font-size: 12px; color: var(--cor-texto-3); margin-top: 4px; max-width: 36ch; white-space: normal; }
