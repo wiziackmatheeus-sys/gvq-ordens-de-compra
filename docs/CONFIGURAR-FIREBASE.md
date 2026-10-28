@@ -18,12 +18,11 @@ As regras ficam em [`firestore.rules`](../firestore.rules). Depois de mudar o ar
 1. Console → **Firestore Database → Regras**.
 2. Apagar o conteúdo, colar o arquivo inteiro e clicar em **Publicar**.
 
-## Primeiro analista
+## Cargo Master
 
-1. No site, a pessoa clica em **Criar acesso** e se cadastra. Ela entra como Solicitante.
-2. Console → **Firestore Database → Dados → usuarios →** documento com o login dela (ex.: `matheus.souza`).
-3. Clicar no campo `perfil`, trocar `solicitante` por `analista` e salvar.
-4. Sair e entrar de novo no site. Os próximos analistas podem ser promovidos pela aba **Usuários**.
+`matheus.souza` e `matheus.silveira` são Master por login: a lista está em `firestore.rules` (`loginsMaster`) e em `js/listas.js` (`MASTERS`), e as duas precisam ficar iguais. Não precisa mexer no banco. O Master faz tudo o que o analista faz e é o único que promove a Analista, volta para Solicitante ou desativa alguém, pela aba **Usuários**.
+
+Para trocar quem é Master, edite as duas listas e publique as regras de novo.
 
 ## Senha esquecida
 

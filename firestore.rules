@@ -12,7 +12,11 @@ service cloud.firestore {
       return logado() && exists(caminho('usuarios', meuLogin()))
         && eu().uid == request.auth.uid && eu().perfil in ['solicitante', 'analista'] && eu().get('ativo', true) == true;
     }
-    function analista() { return ativo() && eu().perfil == 'analista'; }
+    // Cargo Master: fixo por login (mesma lista de MASTERS em js/listas.js). Faz tudo o que o
+    // analista faz e é o único que muda o cargo ou desativa outras pessoas.
+    function loginsMaster() { return ['matheus.souza', 'matheus.silveira']; }
+    function master() { return ativo() && meuLogin() in loginsMaster(); }
+    function analista() { return ativo() && (eu().perfil == 'analista' || meuLogin() in loginsMaster()); }
 
     function texto(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
     function camposFormulario() {
@@ -48,8 +52,8 @@ service cloud.firestore {
         (logado() && login == meuLogin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'recriadoEm'])
           && request.resource.data.uid == request.auth.uid && request.resource.data.recriadoEm == request.time)
-        // O analista muda perfil e situação de outras pessoas, para não se trancar fora.
-        || (analista() && login != meuLogin()
+        // Só o Master muda cargo (Solicitante/Analista) e situação, e nunca de outro Master.
+        || (master() && !(login in loginsMaster())
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['perfil', 'ativo'])
           && request.resource.data.perfil in ['solicitante', 'analista']
           && request.resource.data.get('ativo', true) is bool);
@@ -80,6 +84,10 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(camposFormulario().concat(['status', 'atualizadoEm']))
           && request.resource.data.status == 'aguardando' && request.resource.data.atualizadoEm == request.time
           && formularioValido(request.resource.data))
+        // Solicitante cancela o próprio pedido enquanto ainda não virou OC.
+        || (ativo() && resource.data.criadoPor == meuLogin() && resource.data.status in ['aguardando', 'ajuste']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'atualizadoEm'])
+          && request.resource.data.status == 'cancelada' && request.resource.data.atualizadoEm == request.time)
         // Analista pede ajuste ou recusa, sempre com mensagem.
         || (analista() && resource.data.status == 'aguardando'
           && request.resource.data.status in ['ajuste', 'recusada']
@@ -120,10 +128,15 @@ service cloud.firestore {
         && request.resource.data.origens is list && request.resource.data.origens.size() <= 50
         && request.resource.data.importadaPor == meuLogin() && request.resource.data.importadaEm == request.time;
 
-      allow update: if analista()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusAtualizadoPor', 'statusAtualizadoPorNome', 'statusAtualizadoEm'])
-        && request.resource.data.status in ['Pendente', 'Aberto', 'Finalizado', 'Cancelado']
-        && request.resource.data.statusAtualizadoPor == meuLogin() && request.resource.data.statusAtualizadoEm == request.time;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusAtualizadoPor', 'statusAtualizadoPorNome', 'statusAtualizadoEm'])
+        && request.resource.data.statusAtualizadoPor == meuLogin() && request.resource.data.statusAtualizadoEm == request.time
+        && (
+          // Analista ou Master muda para qualquer status, inclusive Cancelado.
+          (analista() && request.resource.data.status in ['Pendente', 'Aberto', 'Finalizado', 'Cancelado'])
+          // Solicitante só cancela a OC do próprio pedido, enquanto Pendente ou Aberta.
+          || (ativo() && resource.data.get('criadoPor', '') == meuLogin()
+            && resource.data.status in ['Pendente', 'Aberto'] && request.resource.data.status == 'Cancelado')
+        );
       allow delete: if false;
     }
 

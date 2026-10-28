@@ -3,7 +3,7 @@ import {
     collection, doc, getDoc, onSnapshot, query, where, addDoc, updateDoc, setDoc, runTransaction, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db } from "./firebase.js";
-import { TIPOS, SEXOS, PROPRIETARIOS, TRAVAS, STATUS_OC, LISTAS_PADRAO, NOMES_LISTAS, SITUACOES, CLASSE_STATUS_OC, DESCRICAO_STATUS_OC } from "./listas.js";
+import { TIPOS, SEXOS, PROPRIETARIOS, TRAVAS, STATUS_OC, LISTAS_PADRAO, NOMES_LISTAS, SITUACOES, CLASSE_STATUS_OC, DESCRICAO_STATUS_OC, MASTERS, CANCELAVEL_PELO_SOLICITANTE } from "./listas.js";
 import { lerArquivosPlanilha } from "./importar.js";
 import { escapar, formatarData, formatarNumero, formatarPreco, lerNumero, hojeIso, compararNomes, contemTermos } from "./util.js";
 
@@ -17,7 +17,10 @@ const estado = {
     analisando: null     // solicitação aberta no diálogo de análise
 };
 const cancelamentos = [];
-const ehAnalista = () => estado.usuario?.perfil === 'analista';
+const ehMaster = () => MASTERS.includes(estado.usuario?.login);
+// O Master faz tudo o que o analista faz, e só ele mexe nos usuários.
+const ehAnalista = () => estado.usuario?.perfil === 'analista' || ehMaster();
+const nomeCargo = u => MASTERS.includes(u.login) ? 'Master' : u.perfil === 'analista' ? 'Analista' : 'Solicitante';
 const dataDe = ts => ts?.toDate ? ts.toDate().toLocaleDateString('sv-SE') : '';
 const tag = (texto, classe = '') => `<span class="tag ${classe}">${escapar(texto)}</span>`;
 const vazio = (tbody, colunas, texto) => { $(tbody).innerHTML = `<tr><td class="celula-vazia" colspan="${colunas}">${escapar(texto)}</td></tr>`; };
@@ -63,8 +66,9 @@ else onAuthStateChanged(auth, async user => {
 function iniciar() {
     const u = estado.usuario;
     $('nome-usuario').textContent = u.nome;
-    $('perfil-usuario').textContent = u.perfil === 'analista' ? 'Analista' : 'Solicitante';
+    $('perfil-usuario').textContent = nomeCargo(u);
     document.querySelectorAll('[data-analista]').forEach(el => { el.hidden = !ehAnalista(); });
+    document.querySelectorAll('[data-master]').forEach(el => { el.hidden = !ehMaster(); });
     document.querySelector('.abas').hidden = false;
     $('carregando').hidden = true;
 
@@ -91,10 +95,12 @@ function iniciar() {
             estado.ocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderOcs();
         }, falhar));
-        cancelamentos.push(onSnapshot(collection(db, 'usuarios'), snap => {
-            estado.usuarios = snap.docs.map(d => ({ ...d.data(), login: d.id }));
-            renderUsuarios();
-        }, falhar));
+        if (ehMaster()) {
+            cancelamentos.push(onSnapshot(collection(db, 'usuarios'), snap => {
+                estado.usuarios = snap.docs.map(d => ({ ...d.data(), login: d.id }));
+                renderUsuarios();
+            }, falhar));
+        }
         montarOcs();
         montarCadastros();
     }
@@ -276,10 +282,31 @@ function renderMinhas() {
             <td>${tag(situacao.texto, situacao.classe)}${detalhe}</td>
             <td>${s.ocNumero ? `<strong>${s.ocNumero}</strong>` : '—'}</td>
             <td>${oc ? tag(oc.status, CLASSE_STATUS_OC[oc.status]) + `<span class="motivo">${escapar(DESCRICAO_STATUS_OC[oc.status] || '')}</span>` : '—'}</td>
-            <td><div class="acoes-linha">${s.status === 'ajuste' ? `<button class="btn btn-primario btn-sm" data-corrigir="${s.id}">Corrigir</button>` : ''}</div></td>
+            <td><div class="acoes-linha">${s.status === 'ajuste' ? `<button class="btn btn-primario btn-sm" data-corrigir="${s.id}">Corrigir</button>` : ''}${
+                ['aguardando', 'ajuste'].includes(s.status) ? `<button class="btn btn-perigo btn-sm" data-cancelar-sol="${s.id}">Cancelar</button>` : ''}${
+                oc && CANCELAVEL_PELO_SOLICITANTE.includes(oc.status) ? `<button class="btn btn-perigo btn-sm" data-cancelar-oc="${oc.numero}">Cancelar OC</button>` : ''}</div></td>
         </tr>`;
     }).join('');
     $('tbody-minhas').querySelectorAll('[data-corrigir]').forEach(b => b.onclick = () => editarSolicitacao(b.dataset.corrigir));
+    $('tbody-minhas').querySelectorAll('[data-cancelar-sol]').forEach(b => b.onclick = () => cancelarSolicitacao(b.dataset.cancelarSol));
+    $('tbody-minhas').querySelectorAll('[data-cancelar-oc]').forEach(b => b.onclick = () => cancelarMinhaOc(Number(b.dataset.cancelarOc)));
+}
+
+// O solicitante cancela o próprio pedido enquanto não vira OC.
+async function cancelarSolicitacao(id) {
+    if (!confirm('Cancelar esta solicitação? Ela sai da fila de análise.')) return;
+    try {
+        await updateDoc(doc(db, 'solicitacoes', id), { status: 'cancelada', atualizadoEm: serverTimestamp() });
+        if (estado.editando?.id === id) limparFormulario();
+    } catch (error) { console.error(error); alert('Não foi possível cancelar a solicitação.'); }
+}
+
+// ...e a OC que nasceu do pedido dele, enquanto não foi finalizada.
+async function cancelarMinhaOc(numero) {
+    if (!confirm(`Cancelar a OC ${numero}? Não dá para desfazer.`)) return;
+    try {
+        await updateDoc(doc(db, 'ocs', String(numero)), { status: 'Cancelado', statusAtualizadoPor: estado.usuario.login, statusAtualizadoPorNome: estado.usuario.nome, statusAtualizadoEm: serverTimestamp() });
+    } catch (error) { console.error(error); alert('Não foi possível cancelar a OC.'); }
 }
 
 // ---------------------------------------------------------------------------
@@ -599,8 +626,8 @@ function renderCadastros() {
 }
 
 // ---------------------------------------------------------------------------
-// Usuários (analista)
-// Cada pessoa cria o próprio acesso. Senha esquecida: o analista apaga a conta em
+// Usuários (Master)
+// Cada pessoa cria o próprio acesso. Senha esquecida: o Master apaga a conta em
 // Authentication, no Console do Firebase, e a pessoa cria de novo com o mesmo usuário,
 // mantendo perfil e histórico (o cadastro fica guardado pelo login).
 // ---------------------------------------------------------------------------
@@ -610,14 +637,16 @@ function renderUsuarios() {
     const eu = estado.usuario.login;
     $('tbody-usuarios').innerHTML = lista.map(u => {
         const proprio = u.login === eu;
+        // O cargo Master é fixo (lista MASTERS): não se troca nem se desativa por aqui.
+        const fixo = MASTERS.includes(u.login);
         return `<tr>
             <td><strong>${escapar(u.nome)}</strong>${proprio ? ' <span class="texto-suave">(você)</span>' : ''}</td>
             <td>${escapar(u.login)}</td>
-            <td><select class="select-status" data-perfil="${escapar(u.login)}" ${proprio ? 'disabled' : ''} aria-label="Perfil de ${escapar(u.nome)}">
+            <td>${fixo ? tag('Master', 'tag-indigo') : `<select class="select-status" data-perfil="${escapar(u.login)}" aria-label="Cargo de ${escapar(u.nome)}">
                 <option value="solicitante"${u.perfil === 'solicitante' ? ' selected' : ''}>Solicitante</option>
                 <option value="analista"${u.perfil === 'analista' ? ' selected' : ''}>Analista</option>
-            </select></td>
-            <td><div class="acoes-linha">${u.ativo === false ? tag('Desativado', 'tag-perigo') : tag('Ativo', 'tag-verde')}${proprio ? '' : `
+            </select>`}</td>
+            <td><div class="acoes-linha">${u.ativo === false ? tag('Desativado', 'tag-perigo') : tag('Ativo', 'tag-verde')}${fixo ? '' : `
                 <button class="btn ${u.ativo === false ? 'btn-secundario' : 'btn-perigo'} btn-sm" data-ativo="${escapar(u.login)}">${u.ativo === false ? 'Reativar' : 'Desativar'}</button>`}
             </div></td>
         </tr>`;

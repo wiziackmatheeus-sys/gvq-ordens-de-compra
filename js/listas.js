@@ -21,12 +21,20 @@ export const NOMES_LISTAS = {
     responsaveis: 'Responsáveis'
 };
 
+// Logins com cargo Master: só eles mudam o cargo e desativam outras pessoas.
+// A mesma lista está em firestore.rules, que é o que vale de verdade.
+export const MASTERS = ['matheus.souza', 'matheus.silveira'];
+
 export const SITUACOES = {
     aguardando: { texto: 'Aguardando análise', classe: 'tag-indigo' },
     ajuste: { texto: 'Ajuste solicitado', classe: 'tag-alerta' },
     recusada: { texto: 'Recusada', classe: 'tag-perigo' },
+    cancelada: { texto: 'Cancelada', classe: 'tag-perigo' },
     gerada: { texto: 'OC gerada', classe: 'tag-verde' }
 };
+
+// Status de OC em que o próprio solicitante ainda pode cancelar.
+export const CANCELAVEL_PELO_SOLICITANTE = ['Pendente', 'Aberto'];
 
 export const DESCRICAO_STATUS_OC = {
     Pendente: 'aguardando viabilidade comercial da BU',
