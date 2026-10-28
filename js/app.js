@@ -338,11 +338,13 @@ function renderMinhas() {
             <td>${oc ? tag(oc.viabilidade, CLASSE_VIABILIDADE[oc.viabilidade]) : '—'}</td>
             <td><div class="acoes-linha">${s.status === 'ajuste' ? `<button class="btn btn-primario btn-sm" data-corrigir="${s.id}">Corrigir</button>` : ''}${
                 ['aguardando', 'ajuste'].includes(s.status) ? `<button class="btn btn-perigo btn-sm" data-cancelar-sol="${s.id}">Cancelar</button>` : ''}${
+                oc ? `<button class="btn btn-secundario btn-sm" data-ver-oc="${oc.numero}">Ver OC</button>` : ''}${
                 oc && CANCELAVEL_PELO_SOLICITANTE.includes(oc.status) ? `<button class="btn btn-perigo btn-sm" data-cancelar-oc="${oc.numero}">Cancelar OC</button>` : ''}</div></td>
         </tr>`;
     }).join('');
     $('tbody-minhas').querySelectorAll('[data-corrigir]').forEach(b => b.onclick = () => editarSolicitacao(b.dataset.corrigir));
     $('tbody-minhas').querySelectorAll('[data-cancelar-sol]').forEach(b => b.onclick = () => cancelarSolicitacao(b.dataset.cancelarSol));
+    $('tbody-minhas').querySelectorAll('[data-ver-oc]').forEach(b => b.onclick = () => abrirModeloOc(estado.minhasOcs.get(Number(b.dataset.verOc))));
     $('tbody-minhas').querySelectorAll('[data-cancelar-oc]').forEach(b => b.onclick = () => cancelarMinhaOc(Number(b.dataset.cancelarOc)));
 }
 
@@ -511,7 +513,8 @@ $('btn-gerar-oc').onclick = () => comBloqueio(async () => {
         return n;
     });
     $('dialogo-analise').close();
-    alert(`OC ${numero} gerada: Em Andamento, com viabilidade Pendente.`);
+    abrirModeloOc({ numero, tipo: s.tipo, sexo: s.sexo, raca: s.raca, quantidade, origens, destino: s.destino, dataPrevista: s.dataPrevista },
+        `OC ${numero} gerada: Em Andamento, com viabilidade Pendente.`);
 });
 
 async function devolver(status) {
@@ -579,9 +582,11 @@ function renderOcs() {
         <td><select class="select-status" data-viabilidade="${escapar(oc.id)}" title="${escapar(DESCRICAO_VIABILIDADE[oc.viabilidade] || '')}" aria-label="Viabilidade da OC ${escapar(rotuloOc(oc))}">
             ${VIABILIDADES.map(v => `<option${v === oc.viabilidade ? ' selected' : ''}>${v}</option>`).join('')}
         </select></td>
-        <td>${oc.status === 'Cancelado' ? `<button class="btn btn-perigo btn-sm" data-excluir="${escapar(oc.id)}">Excluir</button>` : ''}</td>
+        <td><div class="acoes-linha"><button class="btn btn-secundario btn-sm" data-ver="${escapar(oc.id)}">Ver OC</button>${
+            oc.status === 'Cancelado' ? `<button class="btn btn-perigo btn-sm" data-excluir="${escapar(oc.id)}">Excluir</button>` : ''}</div></td>
     </tr>`).join('');
     $('tbody-ocs').querySelectorAll('[data-excluir]').forEach(b => b.onclick = () => excluirOc(estado.ocs.find(o => o.id === b.dataset.excluir)));
+    $('tbody-ocs').querySelectorAll('[data-ver]').forEach(b => b.onclick = () => abrirModeloOc(estado.ocs.find(o => o.id === b.dataset.ver)));
     // Status e viabilidade são gravados sempre juntos, para a OC antiga já passar ao formato novo.
     const mudar = (sel, campo, rotulo, descricao) => sel.onchange = async () => {
         const oc = estado.ocs.find(o => o.id === sel.dataset[campo === 'status' ? 'oc' : 'viabilidade']);
@@ -623,6 +628,89 @@ async function excluirOc(oc) {
         alert(error.message?.startsWith('Esta OC') ? error.message : 'Não foi possível excluir a OC.');
     }
 }
+
+// ---------------------------------------------------------------------------
+// Modelo da OC para visualizar e mandar por e-mail (mesmo layout da planilha de OCs).
+// O HTML usa tabela e estilos inline para colar no Outlook/Gmail sem perder a formatação.
+// ---------------------------------------------------------------------------
+const TITULOS_OC = { Compra: 'Ordem de Compra', 'Transferência': 'Ordem de Transferência', Trading: 'Ordem de Trading' };
+let ocAberta = null;
+
+function camposModeloOc(oc) {
+    const data = dataOc(oc) || '';
+    const mes = /^\d{4}-\d{2}/.test(data) ? new Date(`${data.slice(0, 7)}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long' }) : '';
+    return [
+        ['Número da OC', rotuloOc(oc)],
+        // Em Compra a origem é sempre "Compra": o modelo da compra não tem essa linha.
+        ...(oc.tipo === 'Compra' ? [] : [['Fazenda Origem', textoOrigens(oc)]]),
+        ['Fazenda Destino', oc.destino],
+        ['Mês da OC', mes.charAt(0).toUpperCase() + mes.slice(1)],
+        ['Sexo', oc.sexo],
+        ['Raça', oc.raca],
+        ['Quantidade', oc.quantidade ? `${formatarNumero(oc.quantidade)} cb` : '']
+    ];
+}
+
+function htmlModeloOc(oc) {
+    const logo = new URL('../assets/img/logo-gvq.png', location.href).href;
+    const titulo = TITULOS_OC[oc.tipo] || 'Ordem de Compra';
+    const linha = 'border-bottom:1px solid #BFBFBF;padding:3px 6px;';
+    return `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:340px;font-family:Calibri,Arial,sans-serif;font-size:15px;color:#000;background:#fff">
+        <tr><td colspan="2" style="padding:0 0 4px"><img src="${logo}" alt="GVQ" width="120" style="display:block;width:120px;height:auto;border:0"></td></tr>
+        <tr><td colspan="2" style="padding:2px 6px;border-bottom:2px solid #12004F;font-size:20px;font-weight:bold;font-style:italic;color:#12004F">${escapar(titulo)}</td></tr>
+        ${camposModeloOc(oc).map(([rotulo, valor]) => `<tr>
+            <td style="${linha}font-weight:bold;font-style:italic;white-space:nowrap">${escapar(rotulo)}</td>
+            <td style="${linha}padding-left:18px">${escapar(valor || '—')}</td></tr>`).join('')}
+    </table>`;
+}
+
+const textoModeloOc = oc => [TITULOS_OC[oc.tipo] || 'Ordem de Compra', ...camposModeloOc(oc).map(([r, v]) => `${r}: ${v || '—'}`)].join('\n');
+const assuntoModeloOc = oc => `${TITULOS_OC[oc.tipo] || 'Ordem de Compra'} ${rotuloOc(oc)} - ${oc.destino || ''}`.trim();
+
+function abrirModeloOc(oc, aviso = '') {
+    if (!oc) return;
+    ocAberta = oc;
+    $('modelo-oc').innerHTML = htmlModeloOc(oc);
+    $('aviso-modelo-oc').textContent = aviso;
+    $('dialogo-oc').showModal();
+}
+
+// Copia o modelo formatado (HTML) e, para quem colar em texto puro, a versão em texto.
+async function copiarModeloOc() {
+    const html = htmlModeloOc(ocAberta), texto = textoModeloOc(ocAberta);
+    try {
+        await navigator.clipboard.write([new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([texto], { type: 'text/plain' })
+        })]);
+    } catch {
+        // Navegadores sem ClipboardItem: copia o que está na tela.
+        const faixa = document.createRange();
+        faixa.selectNodeContents($('modelo-oc'));
+        getSelection().removeAllRanges();
+        getSelection().addRange(faixa);
+        document.execCommand('copy');
+        getSelection().removeAllRanges();
+    }
+}
+
+$('btn-copiar-oc').onclick = async () => {
+    await copiarModeloOc();
+    $('aviso-modelo-oc').textContent = 'Modelo copiado. Cole (Ctrl+V) no corpo do e-mail.';
+};
+$('btn-email-oc').onclick = async () => {
+    await copiarModeloOc();
+    $('aviso-modelo-oc').textContent = 'Modelo copiado. No e-mail que abriu, cole (Ctrl+V) no corpo e escolha os destinatários.';
+    location.href = `mailto:?subject=${encodeURIComponent(assuntoModeloOc(ocAberta))}`;
+};
+$('btn-imprimir-oc').onclick = () => {
+    const janela = window.open('', '_blank');
+    if (!janela) { alert('Libere as janelas pop-up deste site para imprimir.'); return; }
+    janela.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${escapar(assuntoModeloOc(ocAberta))}</title></head>
+        <body style="margin:32px">${htmlModeloOc(ocAberta)}</body></html>`);
+    janela.document.close();
+    janela.onload = () => janela.print();
+};
 
 // Mesmas colunas da planilha original de OCs, mais Raça, Solicitante, Responsável e Viabilidade no fim.
 // Uma linha por origem, como na planilha.

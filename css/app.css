@@ -53,6 +53,9 @@ td strong, .col-destaque { color: var(--indigo-900); }
 .opcoes.campo-invalido .opcao { border-color: var(--perigo-600); }   /* o grupo não tem borda: destaca os botões */
 .obrigatorio { color: var(--perigo-600); }
 
+/* Modelo da OC (o estilo do modelo em si é inline, para ir junto no e-mail) */
+.modelo-oc { display: flex; justify-content: center; padding: 20px; border: 1px solid var(--cor-borda); border-radius: var(--raio); background: #fff; overflow-x: auto; }
+
 /* Lista de sugestões de Origem e Fazenda de destino (ver sugerir() em app.js) */
 .com-sugestoes { position: relative; }
 .sugestoes { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none; max-height: 240px; overflow-y: auto; background: #fff; border: 1px solid var(--cor-borda-forte); border-radius: var(--raio); box-shadow: var(--sombra-md); }
