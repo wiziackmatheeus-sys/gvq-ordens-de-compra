@@ -164,8 +164,14 @@ const campo = nome => $('form-solicitacao').elements[nome];
 
 function montarFormulario() {
     criarOpcoes($('f-tipo'), TIPOS, valor => {
-        $('grupo-preco').hidden = valor !== 'Compra';
-        if (valor !== 'Compra') $('f-preco').value = '';
+        const compra = valor === 'Compra';
+        $('grupo-preco').hidden = !compra;
+        if (!compra) $('f-preco').value = '';
+        // Em Compra a origem é sempre "Compra" e não se edita; o fornecedor entra nas origens da OC.
+        const origem = $('f-origem');
+        if (compra) origem.value = 'Compra';
+        else if (origem.readOnly) origem.value = '';
+        origem.readOnly = compra;
     });
     criarOpcoes($('f-sexo'), SEXOS);
     criarOpcoes($('f-proprietario'), PROPRIETARIOS);
@@ -196,6 +202,7 @@ function editarSolicitacao(id) {
     $('f-sexo').definir(s.sexo);
     $('f-proprietario').definir(s.proprietario);
     CAMPOS_TEXTO.forEach(n => { campo(n).value = s[n] ?? ''; });
+    if (s.tipo === 'Compra') campo('origem').value = 'Compra';
     campo('quantidade').value = s.quantidade ?? '';
     $('f-preco').value = s.preco != null ? formatarPreco(s.preco) : '';
     $('titulo-form').textContent = 'Corrigir solicitação';
