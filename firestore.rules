@@ -98,21 +98,30 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'ocNumero', 'mensagemAnalista', 'analisadoPor', 'analisadoPorNome', 'analisadoEm'])
           && request.resource.data.ocNumero is int && assinaturaAnalise(request.resource.data)
           && !exists(caminho('ocs', string(request.resource.data.ocNumero)))
-          && getAfter(caminho('ocs', string(request.resource.data.ocNumero))).data.solicitacaoId == id);
+          && getAfter(caminho('ocs', string(request.resource.data.ocNumero))).data.solicitacaoId == id)
+        // OC excluída pelo analista: o pedido fica Cancelado, sem número, na mesma transação.
+        || (analista() && resource.data.status == 'gerada' && request.resource.data.status == 'cancelada'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'ocNumero', 'mensagemAnalista', 'analisadoPor', 'analisadoPorNome', 'analisadoEm'])
+          && !('ocNumero' in request.resource.data) && texto(request.resource.data.mensagemAnalista, 1, 1000)
+          && assinaturaAnalise(request.resource.data)
+          && !existsAfter(caminho('ocs', string(resource.data.ocNumero))));
       allow delete: if false;
     }
 
     match /ocs/{numero} {
       allow read: if analista() || (ativo() && resource.data.criadoPor == meuLogin());
 
-      // Número automático: é o próximo livre do contador, que avança na mesma transação.
+      // Número automático: um número liberado por exclusão (sai da lista na mesma transação)
+      // ou o próximo livre do contador, que avança na mesma transação.
       allow create: if analista()
         && request.resource.data.keys().hasOnly(['numero', 'dataEmissao', 'status', 'viabilidade', 'trava', 'tipo', 'sexo', 'raca', 'quantidade', 'origens',
           'destino', 'proprietario', 'dataPrevista', 'observacao', 'telefone', 'solicitante', 'responsavel',
           'criadoPor', 'solicitacaoId', 'geradaPor', 'geradaPorNome', 'geradaEm'])
         && request.resource.data.numero is int && string(request.resource.data.numero) == numero
-        && request.resource.data.numero >= get(caminho('config', 'contador')).data.proxima
-        && getAfter(caminho('config', 'contador')).data.proxima == request.resource.data.numero + 1
+        && ((request.resource.data.numero >= get(caminho('config', 'contador')).data.proxima
+            && getAfter(caminho('config', 'contador')).data.proxima == request.resource.data.numero + 1)
+          || (request.resource.data.numero in get(caminho('config', 'contador')).data.get('liberados', [])
+            && !(request.resource.data.numero in getAfter(caminho('config', 'contador')).data.get('liberados', []))))
         && request.resource.data.status == 'Em Andamento' && request.resource.data.viabilidade == 'Pendente'
         && request.resource.data.trava in ['Sim', 'Não']
         && request.resource.data.quantidade is int && request.resource.data.quantidade > 0
@@ -141,16 +150,32 @@ service cloud.firestore {
             && resource.data.status in ['Em Andamento', 'Pendente', 'Aberto'] && request.resource.data.status == 'Cancelado'
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['viabilidade']))
         );
-      allow delete: if false;
+      // Analista ou Master exclui só OC cancelada (o número volta pela lista liberados do contador).
+      allow delete: if analista() && resource.data.status == 'Cancelado';
     }
 
     match /config/contador {
       allow read: if analista();
-      allow update: if analista()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proxima'])
-        && request.resource.data.proxima is int && request.resource.data.proxima > resource.data.proxima
-        && !exists(caminho('ocs', string(request.resource.data.proxima - 1)))
-        && existsAfter(caminho('ocs', string(request.resource.data.proxima - 1)));
+      allow update: if analista() && (
+        // OC nova com o próximo número: o contador avança.
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proxima'])
+          && request.resource.data.proxima is int && request.resource.data.proxima > resource.data.proxima
+          && !exists(caminho('ocs', string(request.resource.data.proxima - 1)))
+          && existsAfter(caminho('ocs', string(request.resource.data.proxima - 1))))
+        // OC excluída: o número dela entra na lista de liberados.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['liberados', 'ultimoLiberado'])
+          && request.resource.data.ultimoLiberado is int && request.resource.data.ultimoLiberado < resource.data.proxima
+          && !(request.resource.data.ultimoLiberado in resource.data.get('liberados', []))
+          && request.resource.data.liberados == resource.data.get('liberados', []).concat([request.resource.data.ultimoLiberado])
+          && exists(caminho('ocs', string(request.resource.data.ultimoLiberado)))
+          && !existsAfter(caminho('ocs', string(request.resource.data.ultimoLiberado))))
+        // OC nova reaproveitando um número liberado: ele sai da lista.
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['liberados', 'ultimoReuso'])
+          && request.resource.data.ultimoReuso in resource.data.get('liberados', [])
+          && request.resource.data.liberados == resource.data.liberados.removeAll([request.resource.data.ultimoReuso])
+          && !exists(caminho('ocs', string(request.resource.data.ultimoReuso)))
+          && existsAfter(caminho('ocs', string(request.resource.data.ultimoReuso))))
+      );
       allow create, delete: if false;
     }
   }

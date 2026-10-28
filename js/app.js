@@ -1,6 +1,6 @@
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-    collection, doc, getDoc, onSnapshot, query, where, addDoc, updateDoc, setDoc, runTransaction, writeBatch, serverTimestamp
+    collection, doc, getDoc, onSnapshot, query, where, addDoc, updateDoc, setDoc, runTransaction, writeBatch, serverTimestamp, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db } from "./firebase.js";
 import { TIPOS, SEXOS, PROPRIETARIOS, TRAVAS, STATUS_OC, LISTAS_PADRAO, NOMES_LISTAS, SITUACOES, CLASSE_STATUS_OC, DESCRICAO_STATUS_OC, MASTERS, CANCELAVEL_PELO_SOLICITANTE,
@@ -275,7 +275,7 @@ function renderMinhas() {
     $('tbody-minhas').innerHTML = lista.map(s => {
         const situacao = SITUACOES[s.status] || { texto: s.status, classe: '' };
         const oc = s.ocNumero ? estado.minhasOcs.get(s.ocNumero) : null;
-        const detalhe = ['ajuste', 'recusada'].includes(s.status) && s.mensagemAnalista
+        const detalhe = ['ajuste', 'recusada', 'cancelada'].includes(s.status) && s.mensagemAnalista
             ? `<span class="motivo">${escapar(s.mensagemAnalista)}</span>` : '';
         return `<tr>
             <td class="col-data"><strong>${formatarData(dataDe(s.criadoEm))}</strong></td>
@@ -436,8 +436,15 @@ $('btn-gerar-oc').onclick = () => comBloqueio(async () => {
         if (sol.data()?.status !== 'aguardando') throw new Error('Esta solicitação já foi analisada por outra pessoa.');
         let n = contador.data()?.proxima;
         if (!Number.isInteger(n)) throw new Error('Contador de OCs não configurado (config/contador).');
-        // Próximo número livre: pula números que já existam (ex.: OCs importadas).
-        while ((await t.get(doc(db, 'ocs', String(n)))).exists()) n++;
+        // Números de OCs excluídas voltam primeiro, do menor para o maior.
+        const liberados = contador.data().liberados || [];
+        let reuso = null;
+        for (const l of [...liberados].sort((a, b) => a - b)) {
+            if (!(await t.get(doc(db, 'ocs', String(l)))).exists()) { reuso = l; break; }
+        }
+        if (reuso !== null) n = reuso;
+        // Senão, o próximo número livre: pula números que já existam (ex.: OCs importadas).
+        else while ((await t.get(doc(db, 'ocs', String(n)))).exists()) n++;
         t.set(doc(db, 'ocs', String(n)), {
             numero: n, dataEmissao: hojeIso(), status: 'Em Andamento', viabilidade: 'Pendente', trava,
             tipo: s.tipo, sexo: s.sexo, raca: s.raca, quantidade, origens,
@@ -447,7 +454,8 @@ $('btn-gerar-oc').onclick = () => comBloqueio(async () => {
             criadoPor: s.criadoPor, solicitacaoId: s.id,
             geradaPor: estado.usuario.login, geradaPorNome: estado.usuario.nome, geradaEm: serverTimestamp()
         });
-        t.update(refContador, { proxima: n + 1 });
+        if (reuso !== null) t.update(refContador, { liberados: liberados.filter(l => l !== reuso), ultimoReuso: reuso });
+        else t.update(refContador, { proxima: n + 1 });
         t.update(refSol, { status: 'gerada', ocNumero: n, mensagemAnalista: '', ...assinaturaAnalise() });
         return n;
     });
@@ -502,7 +510,7 @@ function renderOcs() {
 
     const lista = ocsFiltradas();
     $('contagem-ocs').textContent = `${formatarNumero(lista.length)} de ${formatarNumero(estado.ocs.length)} OCs`;
-    if (!lista.length) return vazio('tbody-ocs', 12, estado.ocs.length ? 'Nenhuma OC encontrada com esses filtros.' : 'Nenhuma OC cadastrada.');
+    if (!lista.length) return vazio('tbody-ocs', 13, estado.ocs.length ? 'Nenhuma OC encontrada com esses filtros.' : 'Nenhuma OC cadastrada.');
     $('tbody-ocs').innerHTML = lista.map(oc => `<tr>
         <td class="col-num"><strong>${escapar(rotuloOc(oc))}</strong>${oc.alerta ? ` <span class="tag tag-alerta" title="${escapar(oc.alerta)}">!</span>` : ''}</td>
         <td>${formatarData(dataOc(oc))}</td>
@@ -520,7 +528,9 @@ function renderOcs() {
         <td><select class="select-status" data-viabilidade="${escapar(oc.id)}" title="${escapar(DESCRICAO_VIABILIDADE[oc.viabilidade] || '')}" aria-label="Viabilidade da OC ${escapar(rotuloOc(oc))}">
             ${VIABILIDADES.map(v => `<option${v === oc.viabilidade ? ' selected' : ''}>${v}</option>`).join('')}
         </select></td>
+        <td>${oc.status === 'Cancelado' ? `<button class="btn btn-perigo btn-sm" data-excluir="${escapar(oc.id)}">Excluir</button>` : ''}</td>
     </tr>`).join('');
+    $('tbody-ocs').querySelectorAll('[data-excluir]').forEach(b => b.onclick = () => excluirOc(estado.ocs.find(o => o.id === b.dataset.excluir)));
     // Status e viabilidade são gravados sempre juntos, para a OC antiga já passar ao formato novo.
     const mudar = (sel, campo, rotulo, descricao) => sel.onchange = async () => {
         const oc = estado.ocs.find(o => o.id === sel.dataset[campo === 'status' ? 'oc' : 'viabilidade']);
@@ -534,6 +544,33 @@ function renderOcs() {
     };
     $('tbody-ocs').querySelectorAll('[data-oc]').forEach(sel => mudar(sel, 'status', 'o status', DESCRICAO_STATUS_OC));
     $('tbody-ocs').querySelectorAll('[data-viabilidade]').forEach(sel => mudar(sel, 'viabilidade', 'a viabilidade', DESCRICAO_VIABILIDADE));
+}
+
+// Só OC cancelada é excluída. O número entra em config/contador.liberados e a próxima OC gerada
+// o reaproveita; a solicitação de origem fica Cancelada, sem número de OC.
+async function excluirOc(oc) {
+    const numeroLivre = oc.id === String(oc.numero);   // OCs da planilha com letra ("1173 A") não liberam número
+    if (!confirm(`Excluir a OC ${rotuloOc(oc)}? Ela some do sistema e não dá para desfazer.`
+        + (numeroLivre ? `\n\nO número ${oc.numero} será usado na próxima OC gerada.` : ''))) return;
+    try {
+        await runTransaction(db, async t => {
+            const refOc = doc(db, 'ocs', oc.id), refContador = doc(db, 'config', 'contador');
+            const [atual, contador] = await Promise.all([t.get(refOc), t.get(refContador)]);
+            if (atual.data()?.status !== 'Cancelado') throw new Error('Esta OC não está mais cancelada.');
+            const sol = oc.solicitacaoId ? await t.get(doc(db, 'solicitacoes', oc.solicitacaoId)) : null;
+            const liberados = contador.data()?.liberados || [];
+            t.delete(refOc);
+            if (numeroLivre && oc.numero < contador.data()?.proxima && !liberados.includes(oc.numero)) {
+                t.update(refContador, { liberados: [...liberados, oc.numero], ultimoLiberado: oc.numero });
+            }
+            if (sol?.data()?.status === 'gerada' && sol.data().ocNumero === oc.numero) {
+                t.update(sol.ref, { status: 'cancelada', ocNumero: deleteField(), mensagemAnalista: `OC ${oc.numero} excluída.`, ...assinaturaAnalise() });
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        alert(error.message?.startsWith('Esta OC') ? error.message : 'Não foi possível excluir a OC.');
+    }
 }
 
 // Mesmas colunas da planilha original de OCs, mais Raça, Solicitante, Responsável e Viabilidade no fim.

@@ -20,6 +20,7 @@ Login simples: usuário (`nome.sobrenome`, gerado pelo nome) e senha de pelo men
 1. O solicitante envia o pedido, que fica **Aguardando análise**.
 2. O analista ou o Master gera a OC (número automático, próximo livre, com uma ou mais origens), pede ajuste ou recusa com motivo. A trava é escolhida pelo analista, obrigatoriamente, antes de gerar.
 3. Toda OC nasce **Em Andamento** → **Finalizado**, ou **Cancelado**. À parte, a **Viabilidade** comercial começa **Pendente** e o analista marca **Concluída** quando o gerente da BU aprova. OCs antigas com status Pendente ou Aberto aparecem como Em Andamento (viabilidade Pendente e Concluída, respectivamente) e passam ao formato novo na próxima mudança.
+4. Analista ou Master pode **excluir** uma OC **Cancelada**: o pedido de origem fica Cancelado e o número da OC volta a ser usado na próxima OC gerada (lista `liberados` em `config/contador`).
 
 ## Dados no Firestore
 
@@ -28,7 +29,7 @@ Login simples: usuário (`nome.sobrenome`, gerado pelo nome) e senha de pelo men
 | `usuarios/{login}` | nome, uid da conta, perfil, ativo |
 | `solicitacoes/{id}` | pedido do formulário, status (`aguardando`, `ajuste`, `recusada`, `cancelada`, `gerada`), ocNumero, criadoPor (login) |
 | `ocs/{numero}` | OC com `origens: [{ origem, quantidade, sequencia, preco }]`, trava, status e viabilidade |
-| `config/contador` | `proxima`: número da próxima OC |
+| `config/contador` | `proxima`: número da próxima OC; `liberados`: números de OCs excluídas, reaproveitados primeiro |
 | `listas/{fazendas, origens, racas, responsaveis}` | `itens`: listas editadas na aba Cadastros |
 
 ## Rodar localmente
