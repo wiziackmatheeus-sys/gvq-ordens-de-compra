@@ -3,7 +3,8 @@ import {
     collection, doc, getDoc, onSnapshot, query, where, addDoc, updateDoc, setDoc, runTransaction, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db } from "./firebase.js";
-import { TIPOS, SEXOS, PROPRIETARIOS, TRAVAS, STATUS_OC, LISTAS_PADRAO, NOMES_LISTAS, SITUACOES, CLASSE_STATUS_OC, DESCRICAO_STATUS_OC, MASTERS, CANCELAVEL_PELO_SOLICITANTE } from "./listas.js";
+import { TIPOS, SEXOS, PROPRIETARIOS, TRAVAS, STATUS_OC, LISTAS_PADRAO, NOMES_LISTAS, SITUACOES, CLASSE_STATUS_OC, DESCRICAO_STATUS_OC, MASTERS, CANCELAVEL_PELO_SOLICITANTE,
+    VIABILIDADES, DESCRICAO_VIABILIDADE, CLASSE_VIABILIDADE, normalizarOc } from "./listas.js";
 import { lerArquivosPlanilha } from "./importar.js";
 import { escapar, formatarData, formatarNumero, formatarPreco, lerNumero, hojeIso, compararNomes, contemTermos } from "./util.js";
 
@@ -82,7 +83,7 @@ function iniciar() {
         renderMinhas();
     }, falhar));
     cancelamentos.push(onSnapshot(query(collection(db, 'ocs'), where('criadoPor', '==', u.login)), snap => {
-        estado.minhasOcs = new Map(snap.docs.map(d => [d.data().numero, d.data()]));
+        estado.minhasOcs = new Map(snap.docs.map(d => [d.data().numero, normalizarOc(d.data())]));
         renderMinhas();
     }, falhar));
 
@@ -92,7 +93,7 @@ function iniciar() {
             renderAnalise();
         }, falhar));
         cancelamentos.push(onSnapshot(collection(db, 'ocs'), snap => {
-            estado.ocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            estado.ocs = snap.docs.map(d => normalizarOc({ id: d.id, ...d.data() }));
             renderOcs();
         }, falhar));
         if (ehMaster()) {
@@ -235,7 +236,9 @@ async function enviarSolicitacao(e) {
     if (enviando) return;
     const { dados, erros } = lerFormulario();
     if (erros.length) {
-        $('erro-solicitacao').textContent = 'Preencha os campos destacados.';
+        const nomes = erros.map(el => document.querySelector(`label[for="${el.id}"]`)?.textContent.replace('*', '').trim()).filter(Boolean);
+        $('erro-solicitacao').textContent = `Preencha os campos obrigatórios: ${nomes.join(', ')}.`;
+        erros[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
         erros[0].focus?.();
         return;
     }
@@ -268,7 +271,7 @@ async function enviarSolicitacao(e) {
 // ---------------------------------------------------------------------------
 function renderMinhas() {
     const lista = [...estado.minhas].sort((a, b) => (b.criadoEm?.seconds ?? Infinity) - (a.criadoEm?.seconds ?? Infinity));
-    if (!lista.length) return vazio('tbody-minhas', 8, 'Você ainda não enviou solicitações.');
+    if (!lista.length) return vazio('tbody-minhas', 9, 'Você ainda não enviou solicitações.');
     $('tbody-minhas').innerHTML = lista.map(s => {
         const situacao = SITUACOES[s.status] || { texto: s.status, classe: '' };
         const oc = s.ocNumero ? estado.minhasOcs.get(s.ocNumero) : null;
@@ -282,6 +285,7 @@ function renderMinhas() {
             <td>${tag(situacao.texto, situacao.classe)}${detalhe}</td>
             <td>${s.ocNumero ? `<strong>${s.ocNumero}</strong>` : '—'}</td>
             <td>${oc ? tag(oc.status, CLASSE_STATUS_OC[oc.status]) + `<span class="motivo">${escapar(DESCRICAO_STATUS_OC[oc.status] || '')}</span>` : '—'}</td>
+            <td>${oc ? tag(oc.viabilidade, CLASSE_VIABILIDADE[oc.viabilidade]) : '—'}</td>
             <td><div class="acoes-linha">${s.status === 'ajuste' ? `<button class="btn btn-primario btn-sm" data-corrigir="${s.id}">Corrigir</button>` : ''}${
                 ['aguardando', 'ajuste'].includes(s.status) ? `<button class="btn btn-perigo btn-sm" data-cancelar-sol="${s.id}">Cancelar</button>` : ''}${
                 oc && CANCELAVEL_PELO_SOLICITANTE.includes(oc.status) ? `<button class="btn btn-perigo btn-sm" data-cancelar-oc="${oc.numero}">Cancelar OC</button>` : ''}</div></td>
@@ -435,7 +439,7 @@ $('btn-gerar-oc').onclick = () => comBloqueio(async () => {
         // Próximo número livre: pula números que já existam (ex.: OCs importadas).
         while ((await t.get(doc(db, 'ocs', String(n)))).exists()) n++;
         t.set(doc(db, 'ocs', String(n)), {
-            numero: n, dataEmissao: hojeIso(), status: 'Pendente', trava,
+            numero: n, dataEmissao: hojeIso(), status: 'Em Andamento', viabilidade: 'Pendente', trava,
             tipo: s.tipo, sexo: s.sexo, raca: s.raca, quantidade, origens,
             destino: s.destino, proprietario: s.proprietario, dataPrevista: s.dataPrevista,
             observacao: s.observacao || '', telefone: s.telefone || '',
@@ -448,7 +452,7 @@ $('btn-gerar-oc').onclick = () => comBloqueio(async () => {
         return n;
     });
     $('dialogo-analise').close();
-    alert(`OC ${numero} gerada com status Pendente.`);
+    alert(`OC ${numero} gerada: Em Andamento, com viabilidade Pendente.`);
 });
 
 async function devolver(status) {
@@ -492,11 +496,13 @@ function ocsFiltradas() {
 function renderOcs() {
     const contagem = Object.fromEntries(STATUS_OC.map(s => [s, 0]));
     estado.ocs.forEach(oc => { if (oc.status in contagem) contagem[oc.status]++; });
-    $('indicadores-ocs').innerHTML = STATUS_OC.map(s => `<div class="indicador"><span class="indicador-rotulo">${s}</span><span class="indicador-valor">${formatarNumero(contagem[s])}</span></div>`).join('');
+    const viabilidadePendente = estado.ocs.filter(oc => oc.status === 'Em Andamento' && oc.viabilidade === 'Pendente').length;
+    const indicador = (rotulo, valor) => `<div class="indicador"><span class="indicador-rotulo">${rotulo}</span><span class="indicador-valor">${formatarNumero(valor)}</span></div>`;
+    $('indicadores-ocs').innerHTML = STATUS_OC.map(s => indicador(s, contagem[s])).join('') + indicador('Viabilidade pendente', viabilidadePendente);
 
     const lista = ocsFiltradas();
     $('contagem-ocs').textContent = `${formatarNumero(lista.length)} de ${formatarNumero(estado.ocs.length)} OCs`;
-    if (!lista.length) return vazio('tbody-ocs', 11, estado.ocs.length ? 'Nenhuma OC encontrada com esses filtros.' : 'Nenhuma OC cadastrada.');
+    if (!lista.length) return vazio('tbody-ocs', 12, estado.ocs.length ? 'Nenhuma OC encontrada com esses filtros.' : 'Nenhuma OC cadastrada.');
     $('tbody-ocs').innerHTML = lista.map(oc => `<tr>
         <td class="col-num"><strong>${escapar(rotuloOc(oc))}</strong>${oc.alerta ? ` <span class="tag tag-alerta" title="${escapar(oc.alerta)}">!</span>` : ''}</td>
         <td>${formatarData(dataOc(oc))}</td>
@@ -511,20 +517,29 @@ function renderOcs() {
         <td><select class="select-status" data-oc="${escapar(oc.id)}" title="${escapar(DESCRICAO_STATUS_OC[oc.status] || '')}" aria-label="Status da OC ${escapar(rotuloOc(oc))}">
             ${STATUS_OC.map(s => `<option${s === oc.status ? ' selected' : ''}>${s}</option>`).join('')}
         </select></td>
+        <td><select class="select-status" data-viabilidade="${escapar(oc.id)}" title="${escapar(DESCRICAO_VIABILIDADE[oc.viabilidade] || '')}" aria-label="Viabilidade da OC ${escapar(rotuloOc(oc))}">
+            ${VIABILIDADES.map(v => `<option${v === oc.viabilidade ? ' selected' : ''}>${v}</option>`).join('')}
+        </select></td>
     </tr>`).join('');
-    $('tbody-ocs').querySelectorAll('[data-oc]').forEach(sel => sel.onchange = async () => {
-        const oc = estado.ocs.find(o => o.id === sel.dataset.oc);
-        if (!confirm(`Mudar a OC ${rotuloOc(oc)} de ${oc.status} para ${sel.value}?\n\n${sel.value}: ${DESCRICAO_STATUS_OC[sel.value]}`)) { sel.value = oc.status; return; }
+    // Status e viabilidade são gravados sempre juntos, para a OC antiga já passar ao formato novo.
+    const mudar = (sel, campo, rotulo, descricao) => sel.onchange = async () => {
+        const oc = estado.ocs.find(o => o.id === sel.dataset[campo === 'status' ? 'oc' : 'viabilidade']);
+        if (!confirm(`Mudar ${rotulo} da OC ${rotuloOc(oc)} de ${oc[campo]} para ${sel.value}?\n\n${sel.value}: ${descricao[sel.value]}`)) { sel.value = oc[campo]; return; }
         try {
-            await updateDoc(doc(db, 'ocs', oc.id), { status: sel.value, statusAtualizadoPor: estado.usuario.login, statusAtualizadoPorNome: estado.usuario.nome, statusAtualizadoEm: serverTimestamp() });
-        } catch (error) { console.error(error); sel.value = oc.status; alert('Não foi possível mudar o status.'); }
-    });
+            await updateDoc(doc(db, 'ocs', oc.id), {
+                status: oc.status, viabilidade: oc.viabilidade, [campo]: sel.value,
+                statusAtualizadoPor: estado.usuario.login, statusAtualizadoPorNome: estado.usuario.nome, statusAtualizadoEm: serverTimestamp()
+            });
+        } catch (error) { console.error(error); sel.value = oc[campo]; alert(`Não foi possível mudar ${rotulo}.`); }
+    };
+    $('tbody-ocs').querySelectorAll('[data-oc]').forEach(sel => mudar(sel, 'status', 'o status', DESCRICAO_STATUS_OC));
+    $('tbody-ocs').querySelectorAll('[data-viabilidade]').forEach(sel => mudar(sel, 'viabilidade', 'a viabilidade', DESCRICAO_VIABILIDADE));
 }
 
-// Mesmas colunas da planilha original de OCs, mais Raça, Solicitante e Responsável no fim.
+// Mesmas colunas da planilha original de OCs, mais Raça, Solicitante, Responsável e Viabilidade no fim.
 // Uma linha por origem, como na planilha.
 function exportarCsv() {
-    const colunas = ['Status da OC', 'OC', 'Qtd cb', 'Sexo', 'Operação', 'Proprietário', 'Origem', 'Destino', 'Sequência de OC', 'Data', 'Trava', 'Observação', 'Raça', 'Solicitante', 'Responsável'];
+    const colunas = ['Status da OC', 'OC', 'Qtd cb', 'Sexo', 'Operação', 'Proprietário', 'Origem', 'Destino', 'Sequência de OC', 'Data', 'Trava', 'Observação', 'Raça', 'Solicitante', 'Responsável', 'Viabilidade'];
     const celula = v => { const t = String(v ?? ''); return /[";\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
     const linhas = [];
     for (const oc of ocsFiltradas().reverse()) {
@@ -532,7 +547,7 @@ function exportarCsv() {
         for (const o of origens) {
             const obs = [o.preco != null ? `R$ ${formatarPreco(o.preco)}/@` : '', o.obs, oc.observacao].filter(Boolean).join(' | ');
             linhas.push([oc.status, rotuloOc(oc), o.quantidade, oc.sexo, oc.tipo, oc.proprietario, o.origem, oc.destino, o.sequencia,
-                formatarData(dataOc(oc)), oc.trava ? `Travar ${oc.trava}` : '', obs, oc.raca, oc.solicitante, oc.responsavel].map(celula).join(';'));
+                formatarData(dataOc(oc)), oc.trava ? `Travar ${oc.trava}` : '', obs, oc.raca, oc.solicitante, oc.responsavel, oc.viabilidade].map(celula).join(';'));
         }
     }
     // BOM + ";" para o Excel em português abrir com acentos e colunas certas

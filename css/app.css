@@ -50,6 +50,8 @@ td strong, .col-destaque { color: var(--indigo-900); }
 .erro-form { color: var(--perigo-700); font-size: 13px; margin-top: 12px; }
 .erro-form:empty { display: none; }
 .campo-invalido { border-color: var(--perigo-600) !important; }
+.opcoes.campo-invalido .opcao { border-color: var(--perigo-600); }   /* o grupo não tem borda: destaca os botões */
+.obrigatorio { color: var(--perigo-600); }
 
 /* Tabelas */
 .tabela-ocs { max-height: 62vh; }

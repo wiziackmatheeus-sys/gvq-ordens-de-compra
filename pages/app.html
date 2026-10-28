@@ -51,47 +51,47 @@
             <form id="form-solicitacao" class="card" novalidate>
                 <div class="form-grid grade-3">
                     <div class="form-group">
-                        <label for="f-tipo">Tipo</label>
+                        <label for="f-tipo">Tipo <span class="obrigatorio">*</span></label>
                         <div class="opcoes" id="f-tipo" role="radiogroup" data-nome="tipo"></div>
                     </div>
                     <div class="form-group">
-                        <label for="f-sexo">Sexo</label>
+                        <label for="f-sexo">Sexo <span class="obrigatorio">*</span></label>
                         <div class="opcoes" id="f-sexo" role="radiogroup" data-nome="sexo"></div>
                     </div>
                     <div class="form-group">
-                        <label for="f-proprietario">Proprietário</label>
+                        <label for="f-proprietario">Proprietário <span class="obrigatorio">*</span></label>
                         <div class="opcoes" id="f-proprietario" role="radiogroup" data-nome="proprietario"></div>
                     </div>
                     <div class="form-group">
-                        <label for="f-raca">Raça</label>
+                        <label for="f-raca">Raça <span class="obrigatorio">*</span></label>
                         <select id="f-raca" name="raca" required></select>
                     </div>
                     <div class="form-group">
-                        <label for="f-quantidade">Quantidade de cabeças</label>
+                        <label for="f-quantidade">Quantidade de cabeças <span class="obrigatorio">*</span></label>
                         <input id="f-quantidade" name="quantidade" type="number" min="1" step="1" inputmode="numeric" required>
                     </div>
                     <div class="form-group">
-                        <label for="f-data">Data prevista</label>
+                        <label for="f-data">Data prevista <span class="obrigatorio">*</span></label>
                         <input id="f-data" name="dataPrevista" type="date" required>
                     </div>
                     <div class="form-group">
-                        <label for="f-origem">Origem</label>
+                        <label for="f-origem">Origem <span class="obrigatorio">*</span></label>
                         <input id="f-origem" name="origem" list="lista-origens" required autocomplete="off">
                     </div>
                     <div class="form-group">
-                        <label for="f-destino">Fazenda de destino</label>
+                        <label for="f-destino">Fazenda de destino <span class="obrigatorio">*</span></label>
                         <input id="f-destino" name="destino" list="lista-fazendas" required autocomplete="off">
                     </div>
                     <div class="form-group" id="grupo-preco" hidden>
-                        <label for="f-preco">Preço R$/@</label>
+                        <label for="f-preco">Preço R$/@ <span class="obrigatorio">*</span></label>
                         <input id="f-preco" name="preco" inputmode="decimal" placeholder="0,00">
                     </div>
                     <div class="form-group">
-                        <label for="f-solicitante">Solicitante</label>
+                        <label for="f-solicitante">Solicitante <span class="obrigatorio">*</span></label>
                         <input id="f-solicitante" name="solicitante" required autocomplete="name">
                     </div>
                     <div class="form-group">
-                        <label for="f-responsavel">Responsável</label>
+                        <label for="f-responsavel">Responsável <span class="obrigatorio">*</span></label>
                         <select id="f-responsavel" name="responsavel" required></select>
                     </div>
                     <div class="form-group">
@@ -118,14 +118,14 @@
             <div class="pagina-cabecalho">
                 <div>
                     <h1 class="pagina-titulo">Minhas solicitações</h1>
-                    <p class="pagina-descricao">Acompanhe a análise e o número e o status da OC de cada pedido. Você pode cancelar um pedido ainda em análise ou uma OC Pendente ou Aberta.</p>
+                    <p class="pagina-descricao">Acompanhe a análise e o número e o status da OC de cada pedido. Você pode cancelar um pedido ainda em análise ou uma OC Em Andamento.</p>
                 </div>
             </div>
             <section class="card card-tabela">
                 <div class="tabela-wrap">
                     <table>
-                        <thead><tr><th>Enviada em</th><th>Tipo</th><th class="col-num">Cabeças</th><th>Origem → Destino</th><th>Situação</th><th>OC</th><th>Status da OC</th><th></th></tr></thead>
-                        <tbody id="tbody-minhas"><tr><td class="celula-vazia" colspan="8">Carregando...</td></tr></tbody>
+                        <thead><tr><th>Enviada em</th><th>Tipo</th><th class="col-num">Cabeças</th><th>Origem → Destino</th><th>Situação</th><th>OC</th><th>Status da OC</th><th>Viabilidade</th><th></th></tr></thead>
+                        <tbody id="tbody-minhas"><tr><td class="celula-vazia" colspan="9">Carregando...</td></tr></tbody>
                     </table>
                 </div>
             </section>
@@ -154,7 +154,7 @@
             <div class="pagina-cabecalho">
                 <div>
                     <h1 class="pagina-titulo">Ordens de compra</h1>
-                    <p class="pagina-descricao">Toda OC nova nasce Pendente, até o gerente da BU aprovar a viabilidade comercial.</p>
+                    <p class="pagina-descricao">Toda OC nova nasce Em Andamento, com viabilidade Pendente até o gerente da BU aprovar a viabilidade comercial.</p>
                 </div>
                 <div class="pagina-acoes">
                     <button id="btn-exportar" class="btn btn-secundario" type="button">
@@ -180,8 +180,8 @@
                 </div>
                 <div class="tabela-wrap tabela-lista tabela-ocs">
                     <table>
-                        <thead><tr><th class="col-num">OC</th><th>Emissão</th><th>Tipo</th><th>Sexo / Raça</th><th class="col-num">Cabeças</th><th>Origem</th><th>Destino</th><th>Proprietário</th><th>Trava</th><th>Responsável</th><th>Status</th></tr></thead>
-                        <tbody id="tbody-ocs"><tr><td class="celula-vazia" colspan="11">Carregando...</td></tr></tbody>
+                        <thead><tr><th class="col-num">OC</th><th>Emissão</th><th>Tipo</th><th>Sexo / Raça</th><th class="col-num">Cabeças</th><th>Origem</th><th>Destino</th><th>Proprietário</th><th>Trava</th><th>Responsável</th><th>Status</th><th>Viabilidade</th></tr></thead>
+                        <tbody id="tbody-ocs"><tr><td class="celula-vazia" colspan="12">Carregando...</td></tr></tbody>
                     </table>
                 </div>
                 <div class="tabela-rodape"><span id="contagem-ocs"></span></div>

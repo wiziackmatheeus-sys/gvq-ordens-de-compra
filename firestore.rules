@@ -107,13 +107,14 @@ service cloud.firestore {
 
       // Número automático: é o próximo livre do contador, que avança na mesma transação.
       allow create: if analista()
-        && request.resource.data.keys().hasOnly(['numero', 'dataEmissao', 'status', 'trava', 'tipo', 'sexo', 'raca', 'quantidade', 'origens',
+        && request.resource.data.keys().hasOnly(['numero', 'dataEmissao', 'status', 'viabilidade', 'trava', 'tipo', 'sexo', 'raca', 'quantidade', 'origens',
           'destino', 'proprietario', 'dataPrevista', 'observacao', 'telefone', 'solicitante', 'responsavel',
           'criadoPor', 'solicitacaoId', 'geradaPor', 'geradaPorNome', 'geradaEm'])
         && request.resource.data.numero is int && string(request.resource.data.numero) == numero
         && request.resource.data.numero >= get(caminho('config', 'contador')).data.proxima
         && getAfter(caminho('config', 'contador')).data.proxima == request.resource.data.numero + 1
-        && request.resource.data.status == 'Pendente' && request.resource.data.trava in ['Sim', 'Não']
+        && request.resource.data.status == 'Em Andamento' && request.resource.data.viabilidade == 'Pendente'
+        && request.resource.data.trava in ['Sim', 'Não']
         && request.resource.data.quantidade is int && request.resource.data.quantidade > 0
         && request.resource.data.origens is list && request.resource.data.origens.size() >= 1 && request.resource.data.origens.size() <= 50
         && request.resource.data.geradaPor == meuLogin() && request.resource.data.geradaEm == request.time
@@ -128,14 +129,17 @@ service cloud.firestore {
         && request.resource.data.origens is list && request.resource.data.origens.size() <= 50
         && request.resource.data.importadaPor == meuLogin() && request.resource.data.importadaEm == request.time;
 
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusAtualizadoPor', 'statusAtualizadoPorNome', 'statusAtualizadoEm'])
+      // OCs antigas ainda podem estar como Pendente ou Aberto (= Em Andamento) e sem viabilidade.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'viabilidade', 'statusAtualizadoPor', 'statusAtualizadoPorNome', 'statusAtualizadoEm'])
         && request.resource.data.statusAtualizadoPor == meuLogin() && request.resource.data.statusAtualizadoEm == request.time
         && (
-          // Analista ou Master muda para qualquer status, inclusive Cancelado.
-          (analista() && request.resource.data.status in ['Pendente', 'Aberto', 'Finalizado', 'Cancelado'])
-          // Solicitante só cancela a OC do próprio pedido, enquanto Pendente ou Aberta.
+          // Analista ou Master muda status e viabilidade, inclusive para Cancelado.
+          (analista() && request.resource.data.status in ['Em Andamento', 'Finalizado', 'Cancelado']
+            && request.resource.data.get('viabilidade', '') in ['Pendente', 'Concluída'])
+          // Solicitante só cancela a OC do próprio pedido, enquanto Em Andamento.
           || (ativo() && resource.data.get('criadoPor', '') == meuLogin()
-            && resource.data.status in ['Pendente', 'Aberto'] && request.resource.data.status == 'Cancelado')
+            && resource.data.status in ['Em Andamento', 'Pendente', 'Aberto'] && request.resource.data.status == 'Cancelado'
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['viabilidade']))
         );
       allow delete: if false;
     }

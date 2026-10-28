@@ -5,7 +5,20 @@ export const TIPOS = ['Compra', 'Transferência', 'Trading'];
 export const SEXOS = ['Machos', 'Fêmeas'];
 export const PROPRIETARIOS = ['Grupo', 'Núcleo IQ'];
 export const TRAVAS = ['Sim', 'Não'];
-export const STATUS_OC = ['Pendente', 'Aberto', 'Finalizado', 'Cancelado'];
+export const STATUS_OC = ['Em Andamento', 'Finalizado', 'Cancelado'];
+export const VIABILIDADES = ['Pendente', 'Concluída'];
+
+// OCs gravadas antes da coluna Viabilidade (inclusive as da planilha) têm status Pendente ou
+// Aberto e nenhum campo viabilidade: Pendente era "aguardando viabilidade" e Aberto, "aprovada".
+// Na próxima mudança feita pelo analista a OC já é gravada no formato novo.
+export function normalizarOc(oc) {
+    const antigo = oc.status === 'Pendente' || oc.status === 'Aberto';
+    return {
+        ...oc,
+        status: antigo ? 'Em Andamento' : oc.status,
+        viabilidade: oc.viabilidade ?? (oc.status === 'Pendente' ? 'Pendente' : 'Concluída')
+    };
+}
 
 export const LISTAS_PADRAO = {
     racas: ['Aberdeen Angus', 'Anelorado', 'Cruzado', 'Nelore', 'Raças Europeias', 'Wagyu'],
@@ -34,13 +47,19 @@ export const SITUACOES = {
 };
 
 // Status de OC em que o próprio solicitante ainda pode cancelar.
-export const CANCELAVEL_PELO_SOLICITANTE = ['Pendente', 'Aberto'];
+export const CANCELAVEL_PELO_SOLICITANTE = ['Em Andamento'];
 
 export const DESCRICAO_STATUS_OC = {
-    Pendente: 'aguardando viabilidade comercial da BU',
-    Aberto: 'viabilidade aprovada, aguardando embarque',
+    'Em Andamento': 'OC emitida, movimentação em andamento',
     Finalizado: 'movimentação concluída',
     Cancelado: 'OC cancelada'
 };
 
-export const CLASSE_STATUS_OC ={ Pendente: 'tag-alerta', Aberto: 'tag-indigo', Finalizado: 'tag-verde', Cancelado: 'tag-perigo' };
+export const CLASSE_STATUS_OC = { 'Em Andamento': 'tag-indigo', Finalizado: 'tag-verde', Cancelado: 'tag-perigo' };
+
+export const DESCRICAO_VIABILIDADE = {
+    Pendente: 'aguardando viabilidade comercial da BU',
+    'Concluída': 'viabilidade comercial aprovada'
+};
+
+export const CLASSE_VIABILIDADE = { Pendente: 'tag-alerta', 'Concluída': 'tag-verde' };
