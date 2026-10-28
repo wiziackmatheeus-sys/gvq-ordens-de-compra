@@ -1,5 +1,13 @@
-/* Telas de login e troca de senha: fundo branco, logo no topo */
+/* Tela de login: foto do rebanho à esquerda, formulário à direita (no celular, só o formulário) */
 body { background: #fff; }
+
+.auth-tela { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; }
+.auth-foto { position: relative; overflow: hidden; background: var(--verde-800); }   /* cor de fundo enquanto a foto carrega */
+.auth-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+@media (max-width: 900px) {
+    .auth-tela { grid-template-columns: 1fr; }
+    .auth-foto { display: none; }
+}
 
 .auth { min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: clamp(40px, 12vh, 120px) 16px 48px; }
 .auth-card { width: 100%; max-width: 380px; }
