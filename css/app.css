@@ -10,6 +10,21 @@ body { background: #fff; color: var(--indigo-900); }
 td strong, .col-destaque { color: var(--indigo-900); }
 .tag-perigo { background: var(--perigo-50); color: var(--perigo-700); }
 
+/* Letreiro das OCs em aberto: faixa índigo da marca, igual nos modos diurno e noturno */
+.letreiro { display: flex; align-items: center; height: 34px; overflow: hidden; background: #12004F; color: rgba(255, 255, 255, 0.92); font-size: 13px; }
+.letreiro-rotulo { flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 14px; background: #00A651; color: #fff; font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.letreiro-contagem { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); font-size: 11px; letter-spacing: 0; }
+.letreiro-janela { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
+.letreiro-faixa { display: inline-flex; white-space: nowrap; animation: letreiro var(--duracao, 60s) linear infinite; }
+.letreiro:hover .letreiro-faixa { animation-play-state: paused; }   /* parar o mouse em cima pausa para ler */
+.letreiro-item { padding: 0 22px; border-right: 1px solid rgba(255, 255, 255, 0.18); }
+.letreiro-item strong { color: #74E3A9; font-weight: 700; }
+@keyframes letreiro { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+    .letreiro-faixa { animation: none; }
+    .letreiro-janela { overflow-x: auto; }
+}
+
 /* Cabeçalho */
 .topo { position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid var(--cor-borda); }
 .topo-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 12px 24px; }

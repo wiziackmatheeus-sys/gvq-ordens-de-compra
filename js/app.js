@@ -319,7 +319,28 @@ async function enviarSolicitacao(e) {
 // ---------------------------------------------------------------------------
 // Minhas solicitações
 // ---------------------------------------------------------------------------
+// Letreiro no topo com as OCs em aberto (Em Andamento). O analista vê todas; o solicitante,
+// as dos próprios pedidos (é o que as regras deixam cada um ler).
+function renderLetreiro() {
+    const ocs = (ehAnalista() ? estado.ocs : [...estado.minhasOcs.values()])
+        .filter(oc => oc.status === 'Em Andamento')
+        .sort((a, b) => b.numero - a.numero);
+    $('letreiro').hidden = !ocs.length;
+    if (!ocs.length) return;
+    const item = oc => `<span class="letreiro-item"><strong>OC ${escapar(rotuloOc(oc))}</strong>${[
+        oc.quantidade ? `${formatarNumero(oc.quantidade)} cab.` : '',
+        [oc.sexo, oc.raca].filter(Boolean).join(' '),
+        [textoOrigens(oc), oc.destino].filter(Boolean).join(' → ')
+    ].filter(Boolean).map(t => ` · ${escapar(t)}`).join('')}</span>`;
+    const itens = ocs.map(item).join('');
+    $('letreiro-contagem').textContent = ocs.length;
+    // Conteúdo repetido duas vezes: a animação anda metade da faixa e recomeça sem emenda.
+    $('letreiro-faixa').innerHTML = itens + itens;
+    $('letreiro-faixa').style.setProperty('--duracao', `${Math.max(30, ocs.length * 7)}s`);
+}
+
 function renderMinhas() {
+    if (!ehAnalista()) renderLetreiro();
     const lista = [...estado.minhas].sort((a, b) => (b.criadoEm?.seconds ?? Infinity) - (a.criadoEm?.seconds ?? Infinity));
     if (!lista.length) return vazio('tbody-minhas', 9, 'Você ainda não enviou solicitações.');
     $('tbody-minhas').innerHTML = lista.map(s => {
@@ -556,6 +577,7 @@ function ocsFiltradas() {
 }
 
 function renderOcs() {
+    renderLetreiro();
     const contagem = Object.fromEntries(STATUS_OC.map(s => [s, 0]));
     estado.ocs.forEach(oc => { if (oc.status in contagem) contagem[oc.status]++; });
     const viabilidadePendente = estado.ocs.filter(oc => oc.status === 'Em Andamento' && oc.viabilidade === 'Pendente').length;
