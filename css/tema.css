@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Modo noturno: <html data-tema="escuro">, escolhido no botão "Modo noturno" (js/tema.js).
+   Carregado por último. Troca a paleta e os fundos que nas outras folhas são brancos fixos.
+   ========================================================================== */
+
+:root { color-scheme: light; }
+:root[data-tema="escuro"] {
+    color-scheme: dark;
+
+    /* Neutros invertidos: quem usa cinza-50 como fundo e cinza-700 como texto continua certo */
+    --cinza-25:  #1C1F31;
+    --cinza-50:  #171A2A;
+    --cinza-100: #24273B;
+    --cinza-200: #2E3248;
+    --cinza-300: #3C405A;
+    --cinza-400: #60657F;
+    --cinza-500: #8E93AB;
+    --cinza-600: #A9ADC2;
+    --cinza-700: #C6C9D8;
+    --cinza-800: #DFE1EA;
+    --cinza-900: #F0F1F6;
+
+    /* Índigo: os tons escuros viram texto claro, os claros viram fundo escuro */
+    --indigo-900: #E6E1FF;
+    --indigo-800: #D2CBFA;
+    --indigo-700: #B7ADF5;
+    --indigo-200: #4A4285;
+    --indigo-100: #2E2860;
+    --indigo-50:  #211C45;
+
+    --verde-800: #74E3A9;
+    --verde-100: #1A4A31;
+    --verde-50:  #12301F;
+
+    --perigo-700: #FF8F85;
+    --perigo-100: #5A2420;
+    --perigo-50:  #2E1714;
+    --alerta-700: #F8C56A;
+    --alerta-100: #57401A;
+    --alerta-50:  #2D2412;
+
+    --cor-fundo: #10121F;
+    --cor-superficie: #181B2C;
+    --cor-superficie-2: #1C1F31;
+    --cor-texto: var(--cinza-900);
+    --cor-marca: var(--indigo-900);
+
+    --sombra-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --sombra-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --sombra-md: 0 10px 24px -8px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+    --sombra-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.65);
+    --anel-foco-forte: 0 0 0 2px var(--cor-fundo), 0 0 0 4px var(--verde-500);
+}
+
+/* Fundos que as outras folhas deixam brancos */
+:root[data-tema="escuro"] body,
+:root[data-tema="escuro"] .topo { background: var(--cor-fundo); }
+:root[data-tema="escuro"] :is(.card, .dialogo, .sugestoes, .indicador, .opcao, .select-status, .senha-codigo, .btn-secundario, .btn-perigo) { background: var(--cor-superficie); }
+:root[data-tema="escuro"] .dialogo { color: var(--cor-texto); }
+:root[data-tema="escuro"] .dialogo::backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-tema="escuro"] .form-group :is(input:not([type="checkbox"], [type="radio"], [type="file"]), select, textarea),
+:root[data-tema="escuro"] .campo { background: var(--cor-superficie-2); }
+:root[data-tema="escuro"] .form-group input[readonly] { background: var(--cinza-100); }
+:root[data-tema="escuro"] .select-status { color: var(--cor-texto); }
+:root[data-tema="escuro"] .opcao[aria-checked="true"] { background: var(--verde-600); color: #fff; }
+:root[data-tema="escuro"] .btn-secundario:hover:not(:disabled) { background: var(--cinza-100); }
+:root[data-tema="escuro"] .btn-perigo:hover:not(:disabled) { background: var(--perigo-50); }
+:root[data-tema="escuro"] .tabela-wrap {
+    background:
+        linear-gradient(90deg, var(--cor-superficie) 30%, rgba(24, 27, 44, 0)) left center / 40px 100% no-repeat local,
+        linear-gradient(270deg, var(--cor-superficie) 30%, rgba(24, 27, 44, 0)) right center / 40px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.5), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.5), transparent) right center / 12px 100% no-repeat scroll,
+        var(--cor-superficie);
+}
+:root[data-tema="escuro"] ::selection { background: var(--verde-100); color: var(--cinza-900); }
+:root[data-tema="escuro"] .modelo-oc { background: var(--cor-fundo); }   /* a imagem da OC continua clara, como sai no e-mail */
+
+/* Botão de troca: mostra a lua no modo diurno e o sol no noturno */
+.btn-tema .icone-sol { display: none; }
+:root[data-tema="escuro"] .btn-tema .icone-sol { display: inline-block; }
+:root[data-tema="escuro"] .btn-tema .icone-lua { display: none; }
+.auth-tema { position: absolute; top: 20px; right: 20px; }
+.auth { position: relative; }
+@media (max-width: 600px) {
+    .topo .btn-tema [data-rotulo] { display: none; }   /* no celular, só o ícone */
+}
