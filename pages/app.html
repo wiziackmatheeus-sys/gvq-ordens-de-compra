@@ -17,37 +17,45 @@
     <script>try { if (localStorage.getItem('gvq-tema') === 'escuro') document.documentElement.dataset.tema = 'escuro'; } catch (e) {}</script>
 </head>
 <body>
-    <header class="topo">
-        <!-- Letreiro com as OCs em aberto (renderLetreiro em app.js) -->
-        <div id="letreiro" class="letreiro" hidden>
-            <span class="letreiro-rotulo">Em aberto <span id="letreiro-contagem" class="letreiro-contagem"></span></span>
-            <div class="letreiro-janela"><div id="letreiro-faixa" class="letreiro-faixa"></div></div>
+    <!-- Letreiro com as OCs em aberto (renderLetreiro em app.js) -->
+    <div id="letreiro" class="letreiro" hidden>
+        <span class="letreiro-rotulo">Em aberto <span id="letreiro-contagem" class="letreiro-contagem"></span></span>
+        <div class="letreiro-janela"><div id="letreiro-faixa" class="letreiro-faixa"></div></div>
+    </div>
+
+    <div class="app">
+    <!-- Barra lateral: logo, abas e usuário (no celular vira barra no topo, ver base.css) -->
+    <aside class="sidebar">
+        <div class="sidebar-marca">
+            <img class="sidebar-logo" src="../assets/img/logo-gvq-negativo.png" alt="GVQ — Grupo Vilela de Queiroz">
+            <span class="sidebar-sistema">Ordens de Compra</span>
         </div>
-        <div class="topo-inner">
-            <img class="topo-logo" data-logo src="../assets/img/logo-gvq.png" alt="GVQ — Grupo Vilela de Queiroz">
-            <span class="topo-sistema">Ordens de Compra</span>
-            <div class="topo-usuario">
-                <span id="nome-usuario" class="topo-nome"></span>
-                <span id="perfil-usuario" class="tag"></span>
-                <button type="button" class="btn btn-fantasma btn-sm btn-tema" data-trocar-tema aria-pressed="false">
-                    <svg class="icon icone-lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-                    <svg class="icon icone-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-                    <span data-rotulo>Modo noturno</span>
-                </button>
-                <button id="btn-sair" class="btn btn-fantasma btn-sm" type="button">
-                    <svg class="icon"><use href="../assets/img/icones.svg#sair"></use></svg><span>Sair</span>
-                </button>
-            </div>
-        </div>
-        <nav class="abas" aria-label="Seções" hidden>
-            <button type="button" class="aba" data-aba="nova">Nova solicitação</button>
-            <button type="button" class="aba" data-aba="minhas">Minhas solicitações</button>
-            <button type="button" class="aba" data-aba="analise" data-analista hidden>Análise <span id="contagem-analise" class="contador" hidden></span></button>
-            <button type="button" class="aba" data-aba="ocs" data-analista hidden>Ordens de compra</button>
-            <button type="button" class="aba" data-aba="cadastros" data-analista hidden>Cadastros</button>
-            <button type="button" class="aba" data-aba="usuarios" data-master hidden>Usuários</button>
+        <nav class="nav abas" aria-label="Seções" hidden>
+            <button type="button" class="nav-item aba" data-aba="nova"><svg class="icon"><use href="../assets/img/icones.svg#mais"></use></svg><span>Nova solicitação</span></button>
+            <button type="button" class="nav-item aba" data-aba="minhas"><svg class="icon"><use href="../assets/img/icones.svg#documento"></use></svg><span>Minhas solicitações</span></button>
+            <button type="button" class="nav-item aba" data-aba="analise" data-analista hidden><svg class="icon"><use href="../assets/img/icones.svg#balanca"></use></svg><span>Análise</span><span id="contagem-analise" class="contador" hidden></span></button>
+            <button type="button" class="nav-item aba" data-aba="ocs" data-analista hidden><svg class="icon"><use href="../assets/img/icones.svg#romaneio"></use></svg><span>Ordens de compra</span></button>
+            <button type="button" class="nav-item aba" data-aba="cadastros" data-analista hidden><svg class="icon"><use href="../assets/img/icones.svg#destino"></use></svg><span>Cadastros</span></button>
+            <button type="button" class="nav-item aba" data-aba="usuarios" data-master hidden><svg class="icon"><use href="../assets/img/icones.svg#pecuaristas"></use></svg><span>Usuários</span></button>
         </nav>
-    </header>
+        <div class="sidebar-rodape">
+            <div class="usuario">
+                <span class="avatar"><svg class="icon"><use href="../assets/img/icones.svg#usuario"></use></svg></span>
+                <span class="usuario-texto">
+                    <span id="nome-usuario" class="bem-vindo"></span>
+                    <span id="perfil-usuario" class="usuario-perfil"></span>
+                </span>
+            </div>
+            <button type="button" class="btn-sair btn-tema" data-trocar-tema aria-pressed="false">
+                <svg class="icon icone-lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                <svg class="icon icone-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                <span data-rotulo>Modo noturno</span>
+            </button>
+            <button id="btn-sair" class="btn-sair" type="button">
+                <svg class="icon"><use href="../assets/img/icones.svg#sair"></use></svg><span>Sair</span>
+            </button>
+        </div>
+    </aside>
 
     <main class="conteudo">
         <p id="carregando" class="texto-suave carregando">Carregando...</p>
@@ -177,18 +185,52 @@
             </div>
             <div id="indicadores-ocs" class="indicadores"></div>
             <section class="card card-tabela">
-                <div class="card-cabecalho filtros">
+                <!-- Filtros da lista de OCs (ocsFiltradas em app.js). Todos se somam. -->
+                <div class="card-cabecalho filtros" id="filtros-ocs">
                     <div class="form-group filtro-busca">
-                        <label for="busca-ocs" class="sr-only">Buscar</label>
-                        <input id="busca-ocs" type="search" placeholder="Buscar por OC, origem, destino, responsável...">
+                        <label for="busca-ocs">Busca geral</label>
+                        <input id="busca-ocs" type="search" placeholder="Qualquer palavra (raça, solicitante...)">
                     </div>
                     <div class="form-group">
-                        <label for="filtro-status" class="sr-only">Status</label>
-                        <select id="filtro-status"><option value="">Todos os status</option></select>
+                        <label for="filtro-numero">Nº da OC</label>
+                        <input id="filtro-numero" type="search" inputmode="numeric" placeholder="Ex.: 1173 ou 1150-1180" autocomplete="off">
                     </div>
                     <div class="form-group">
-                        <label for="filtro-tipo" class="sr-only">Tipo</label>
-                        <select id="filtro-tipo"><option value="">Todos os tipos</option></select>
+                        <label for="filtro-origem">Origem</label>
+                        <input id="filtro-origem" type="search" list="opcoes-origem" placeholder="Digite ou escolha" autocomplete="off">
+                        <datalist id="opcoes-origem"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-destino">Destino</label>
+                        <input id="filtro-destino" type="search" list="opcoes-destino" placeholder="Digite ou escolha" autocomplete="off">
+                        <datalist id="opcoes-destino"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-responsavel">Responsável</label>
+                        <select id="filtro-responsavel"><option value="">Todos</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-status">Status</label>
+                        <select id="filtro-status"><option value="">Todos</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-viabilidade">Viabilidade</label>
+                        <select id="filtro-viabilidade"><option value="">Todas</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-tipo">Tipo</label>
+                        <select id="filtro-tipo"><option value="">Todos</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-de">Data de</label>
+                        <input id="filtro-de" type="date">
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-ate">Data até</label>
+                        <input id="filtro-ate" type="date">
+                    </div>
+                    <div class="form-group filtro-limpar">
+                        <button id="btn-limpar-filtros" class="btn btn-secundario" type="button" hidden>Limpar filtros</button>
                     </div>
                 </div>
                 <div class="tabela-wrap tabela-lista tabela-ocs">
@@ -257,6 +299,7 @@
             </section>
         </section>
     </main>
+    </div>
 
     <!-- Análise de uma solicitação -->
     <dialog id="dialogo-analise" class="dialogo">

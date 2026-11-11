@@ -6,7 +6,7 @@ import { auth, db } from "./firebase.js";
 import { TIPOS, SEXOS, PROPRIETARIOS, TRAVAS, STATUS_OC, LISTAS_PADRAO, NOMES_LISTAS, SITUACOES, CLASSE_STATUS_OC, DESCRICAO_STATUS_OC, MASTERS, CANCELAVEL_PELO_SOLICITANTE,
     VIABILIDADES, DESCRICAO_VIABILIDADE, CLASSE_VIABILIDADE, normalizarOc } from "./listas.js";
 import { lerArquivosPlanilha, lerPlanilhaOcs } from "./importar.js";
-import { escapar, formatarData, formatarNumero, formatarPreco, lerNumero, hojeIso, compararNomes, contemTermos } from "./util.js";
+import { escapar, formatarData, formatarNumero, formatarPreco, lerNumero, hojeIso, compararNomes, contemTermos, normalizarTexto } from "./util.js";
 
 const $ = id => document.getElementById(id);
 const estado = {
@@ -560,8 +560,38 @@ $('btn-recusar').onclick = () => comBloqueio(() => devolver('recusada'));
 function montarOcs() {
     $('filtro-status').insertAdjacentHTML('beforeend', STATUS_OC.map(s => `<option>${s}</option>`).join(''));
     $('filtro-tipo').insertAdjacentHTML('beforeend', TIPOS.map(s => `<option>${s}</option>`).join(''));
-    ['busca-ocs', 'filtro-status', 'filtro-tipo'].forEach(id => $(id).addEventListener('input', renderOcs));
+    $('filtro-viabilidade').insertAdjacentHTML('beforeend', VIABILIDADES.map(s => `<option>${s}</option>`).join(''));
+    CAMPOS_FILTRO_OC.forEach(id => $(id).addEventListener('input', renderOcs));
+    $('btn-limpar-filtros').onclick = () => { CAMPOS_FILTRO_OC.forEach(id => { $(id).value = ''; }); renderOcs(); $('busca-ocs').focus(); };
     $('btn-exportar').onclick = exportarCsv;
+}
+
+const CAMPOS_FILTRO_OC = ['busca-ocs', 'filtro-numero', 'filtro-origem', 'filtro-destino', 'filtro-responsavel',
+    'filtro-status', 'filtro-viabilidade', 'filtro-tipo', 'filtro-de', 'filtro-ate'];
+
+// Opções de origem, destino e responsável saem das próprias OCs; a escolha atual é mantida.
+function atualizarOpcoesFiltroOcs() {
+    const unicos = valores => [...new Map(valores.filter(Boolean).map(v => [normalizarTexto(v), String(v).trim()])).values()].sort(compararNomes);
+    const opcoes = lista => lista.map(v => `<option value="${escapar(v)}"></option>`).join('');
+    $('opcoes-origem').innerHTML = opcoes(unicos(estado.ocs.flatMap(oc => (oc.origens || []).map(o => o.origem))));
+    $('opcoes-destino').innerHTML = opcoes(unicos(estado.ocs.map(oc => oc.destino)));
+    const sel = $('filtro-responsavel'), atual = sel.value;
+    sel.innerHTML = '<option value="">Todos</option>' + unicos(estado.ocs.map(oc => oc.responsavel)).map(v => `<option>${escapar(v)}</option>`).join('');
+    sel.value = atual;
+}
+
+// "1173" acha a OC 1173 (e "1173 A"); "1150-1180" ou "1150 a 1180" acha a faixa; outro texto procura no rótulo.
+function filtroNumeroOc(texto) {
+    const t = normalizarTexto(texto);
+    if (!t) return () => true;
+    const faixa = t.match(/^(\d+)\s*(?:-|a|ate)\s*(\d+)$/);
+    if (faixa) {
+        const [de, ate] = [Number(faixa[1]), Number(faixa[2])].sort((a, b) => a - b);
+        return oc => Number(oc.numero) >= de && Number(oc.numero) <= ate;
+    }
+    const compacto = oc => normalizarTexto(rotuloOc(oc)).replace(/\s+/g, '');
+    if (/^\d+$/.test(t)) return oc => { const r = compacto(oc); return r.startsWith(t) && !/\d/.test(r.charAt(t.length)); };
+    return oc => compacto(oc).includes(t.replace(/\s+/g, ''));
 }
 
 const textoOrigens = oc => (oc.origens || []).map(o => o.origem).filter(Boolean).join(', ');
@@ -569,15 +599,27 @@ const textoOrigens = oc => (oc.origens || []).map(o => o.origem).filter(Boolean)
 const rotuloOc = oc => oc.rotulo || String(oc.numero);
 const dataOc = oc => oc.dataPrevista || oc.dataEmissao;
 function ocsFiltradas() {
-    const busca = $('busca-ocs').value, status = $('filtro-status').value, tipo = $('filtro-tipo').value;
+    const v = id => $(id).value;
+    const busca = v('busca-ocs'), status = v('filtro-status'), tipo = v('filtro-tipo'), viabilidade = v('filtro-viabilidade');
+    const origem = v('filtro-origem'), destino = v('filtro-destino'), responsavel = v('filtro-responsavel');
+    const de = v('filtro-de'), ate = v('filtro-ate');
+    const numeroOk = filtroNumeroOc(v('filtro-numero'));
     return estado.ocs
-        .filter(oc => (!status || oc.status === status) && (!tipo || oc.tipo === tipo)
-            && contemTermos([rotuloOc(oc), textoOrigens(oc), oc.destino, oc.responsavel, oc.solicitante, oc.raca, oc.sexo, oc.proprietario].join(' '), busca))
+        .filter(oc => (!status || oc.status === status) && (!tipo || oc.tipo === tipo) && (!viabilidade || oc.viabilidade === viabilidade)
+            && (!responsavel || compararNomes(oc.responsavel, responsavel) === 0)
+            && numeroOk(oc)
+            && contemTermos(textoOrigens(oc), origem)
+            && contemTermos(oc.destino, destino)
+            && (!de || String(dataOc(oc) || '').slice(0, 10) >= de)
+            && (!ate || (dataOc(oc) && String(dataOc(oc)).slice(0, 10) <= ate))
+            && contemTermos([rotuloOc(oc), textoOrigens(oc), oc.destino, oc.responsavel, oc.solicitante, oc.raca, oc.sexo, oc.proprietario, oc.tipo, oc.status].join(' '), busca))
         .sort((a, b) => b.numero - a.numero || compararNomes(b.id, a.id));
 }
 
 function renderOcs() {
     renderLetreiro();
+    atualizarOpcoesFiltroOcs();
+    $('btn-limpar-filtros').hidden = !CAMPOS_FILTRO_OC.some(id => $(id).value);
     const contagem = Object.fromEntries(STATUS_OC.map(s => [s, 0]));
     estado.ocs.forEach(oc => { if (oc.status in contagem) contagem[oc.status]++; });
     const viabilidadePendente = estado.ocs.filter(oc => oc.status === 'Em Andamento' && oc.viabilidade === 'Pendente').length;

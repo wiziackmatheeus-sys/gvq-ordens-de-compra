@@ -83,5 +83,5 @@
 .auth-tema { position: absolute; top: 20px; right: 20px; }
 .auth { position: relative; }
 @media (max-width: 600px) {
-    .topo .btn-tema [data-rotulo] { display: none; }   /* no celular, só o ícone */
+    .sidebar .btn-tema [data-rotulo] { display: none; }   /* no celular, só o ícone */
 }

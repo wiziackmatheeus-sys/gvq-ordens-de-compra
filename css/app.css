@@ -25,27 +25,21 @@ td strong, .col-destaque { color: var(--indigo-900); }
     .letreiro-janela { overflow-x: auto; }
 }
 
-/* Cabeçalho */
-.topo { position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid var(--cor-borda); }
-.topo-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 16px; padding: 12px 24px; }
-.topo-logo { width: 96px; height: auto; }
-.topo-sistema { font-family: var(--fonte-titulo); font-weight: 700; color: var(--indigo-900); font-size: 15px; padding-left: 16px; border-left: 1px solid var(--cor-borda); }
-.topo-usuario { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.topo-nome { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28ch; }
+/* Letreiro fixo no topo; a barra lateral fica logo abaixo dele */
+.letreiro { position: sticky; top: 0; z-index: 30; }
+.letreiro:not([hidden]) + .app .sidebar { top: 34px; height: calc(100vh - 34px); }
 
-.abas { max-width: 1280px; margin: 0 auto; display: flex; gap: 4px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; }
-.abas::-webkit-scrollbar { display: none; }
-.aba {
-    position: relative; flex-shrink: 0; height: 46px; padding: 0 14px; border: 0; background: transparent;
-    color: var(--cinza-600); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 8px; transition: color var(--transicao);
-}
-.aba:hover { color: var(--indigo-900); }
-.aba.ativa { color: var(--indigo-900); }
-.aba.ativa::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--verde-600); }
+/* Barra lateral (estrutura e cores em base.css: .app, .sidebar, .nav, .nav-item, .sidebar-rodape) */
+.sidebar { --indigo-900: #12004F; }   /* índigo fixo: o modo noturno troca essa variável por um tom claro de texto */
+.sidebar-marca { display: flex; flex-direction: column; gap: 10px; }
+.sidebar-sistema { font-family: var(--fonte-titulo); font-weight: 700; color: #fff; font-size: 14px; letter-spacing: 0.01em; }
+.nav-item > span:not(.contador) { display: block; min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-item .contador { margin-left: auto; }
+.usuario-perfil { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
+.sidebar .btn-tema:hover { background: rgba(255, 255, 255, 0.06); }
 .contador { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--verde-600); color: #fff; font-size: 11.5px; }
 
-.conteudo { max-width: 1280px; margin: 0 auto; padding: 32px 24px 64px; }
+.conteudo { width: 100%; max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px; }
 .carregando { padding: 48px 0; text-align: center; }
 .painel { animation: surgir 0.25s ease both; }
 .painel > * + * { margin-top: 20px; }
@@ -88,7 +82,11 @@ td strong, .col-destaque { color: var(--indigo-900); }
 .indicadores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .indicador { background: #fff; }
 
-.filtros { display: grid; grid-template-columns: minmax(0, 1fr) 200px 200px; gap: 10px; align-items: center; }
+.filtros { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 12px; align-items: end; }
+.filtros .form-group { margin: 0; min-width: 0; }
+.filtros label { font-size: 12px; }
+.filtro-busca { grid-column: span 2; }
+.filtro-limpar { justify-self: start; }
 
 /* Cadastros */
 .grade-cadastros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
@@ -116,18 +114,19 @@ td strong, .col-destaque { color: var(--indigo-900); }
 .origem-linha .btn { height: 42px; padding: 0; }
 
 @media (max-width: 960px) {
+    .letreiro:not([hidden]) + .app .sidebar { height: auto; }   /* no celular a lateral vira barra no topo */
+    .sidebar-marca { flex-direction: row; align-items: center; }
+    .nav-item .contador { position: absolute; top: 4px; right: 4px; margin: 0; min-width: 18px; height: 18px; font-size: 10.5px; }
+    .conteudo { padding: 24px 16px 48px; }
     .grade-3, .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grade-cadastros { grid-template-columns: minmax(0, 1fr); }
     .grade-usuario { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .filtros { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .filtro-busca { grid-column: 1 / -1; }
 }
 @media (max-width: 600px) {
-    .topo-inner { padding: 10px 16px; gap: 10px; }
-    .topo-logo { width: 72px; }
-    .topo-sistema, #perfil-usuario { display: none; }
-    .btn-sair-texto, #btn-sair span { display: none; }
+    .sidebar-sistema, #perfil-usuario { display: none; }
     .conteudo { padding: 20px 16px 48px; }
     .grade-3, .resumo, .grade-usuario { grid-template-columns: minmax(0, 1fr); }
     .origem-linha { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
