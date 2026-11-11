@@ -1,0 +1,59 @@
+/* Tela de login e cadastro (index.html) */
+body { background: var(--cor-superficie); }
+
+.auth { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); min-height: 100vh; }
+
+/* Painel da marca: só o logo */
+.auth-marca {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px;
+    background:
+        radial-gradient(900px 520px at -10% -10%, rgba(0, 166, 81, 0.22), transparent 60%),
+        radial-gradient(700px 500px at 110% 110%, rgba(69, 53, 168, 0.45), transparent 60%),
+        linear-gradient(160deg, var(--indigo-900) 0%, var(--indigo-950) 100%);
+}
+/* grade sutil */
+.auth-marca::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%);
+}
+/* selo do logo como marca d'água */
+.auth-marca::after {
+    content: ''; position: absolute; z-index: -1;
+    right: -110px; bottom: -130px; width: 520px; height: 520px;
+    background: url('../assets/img/simbolo-gvq.png') no-repeat center / contain;
+    opacity: 0.08; transform: rotate(-8deg);
+}
+.auth-logo { width: min(300px, 60%); height: auto; }
+
+/* Área do formulário
+   topo ancorado: o cartão não pula ao trocar de aba nem quando aparece a dica do login */
+.auth-area { display: flex; align-items: flex-start; justify-content: center; padding: clamp(48px, 20vh, 200px) 24px 48px; }
+.auth-card { width: 100%; max-width: 400px; }
+.auth-logo-mobile { display: none; }
+
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 28px; background: var(--cinza-100); border-radius: 12px; }
+.tab { height: 42px; border: 0; border-radius: 9px; background: transparent; color: var(--cor-texto-2); font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color var(--transicao), color var(--transicao), box-shadow var(--transicao); }
+.tab:hover { color: var(--cor-texto); }
+.tab:focus-visible { outline-color: var(--verde-700); }   /* 4,9:1 sobre o cinza da barra */
+.tab.active { background: #fff; color: var(--cor-marca); box-shadow: var(--sombra-sm); }
+
+.form-content { display: none; }
+.form-content.active { display: block; animation: surgir 0.3s ease both; }
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+.auth-form .btn { margin-top: 6px; }
+
+.user-hint { display: block; margin-top: 4px; padding: 10px 12px; border-radius: var(--raio); background: var(--verde-50); border: 1px solid var(--verde-100); color: var(--verde-800); font-size: 13px; }
+
+@media (max-width: 960px) {
+    .auth { grid-template-columns: minmax(0, 1fr); }
+    .auth-marca { display: none; }
+    .auth-area { align-items: flex-start; padding: 40px 20px; background: var(--cor-fundo); }
+    .auth-card { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio-xl); box-shadow: var(--sombra-md); padding: 32px 24px; }
+    .auth-logo-mobile { display: block; width: 148px; height: auto; margin: 0 auto 28px; }
+}

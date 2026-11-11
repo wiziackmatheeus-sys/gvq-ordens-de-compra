@@ -1,0 +1,304 @@
+/* ==========================================================================
+   Painel do Comprador (pages/painel.html)
+   Complementa o css/base.css. Só estilos desta página.
+   ========================================================================== */
+
+/* Largura de leitura do formulário */
+.conteudo-inner { max-width: 960px; }
+
+/* --------------------------------------------------------------------------
+   Grade de formulário em 4 colunas (com spans)
+   -------------------------------------------------------------------------- */
+.form-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.col-2 { grid-column: span 2; }
+.col-3 { grid-column: span 3; }
+/* .encolhe: ocupa 2 de 4 colunas, mas só 1 de 2 quando a grade cai para 2 colunas */
+
+/* Campos obrigatórios ganham um asterisco discreto (somente CSS) */
+.form-group:has(:required:not([readonly])) > label::after { content: '\00a0*'; color: var(--verde-700); font-weight: 700; }
+
+/* Negociação: 3 colunas. Sexo e Raça ficam na coluna da direita; a Raça ocupa 2 linhas,
+   então o campo "Qual é a raça?" surge logo abaixo dela sem abrir buraco ao lado */
+.form-grid-negocio { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.form-grid-negocio > .form-group { justify-content: flex-end; } /* se um rótulo quebrar, os campos continuam alinhados */
+.form-grid-negocio > .campo-raca { grid-column: 3; grid-row: 2 / span 2; justify-content: flex-start; }
+
+/* Campo extra que aparece abaixo do select de raça */
+.campo-extra { margin-top: 8px; }
+@media (min-width: 641px) { .form-grid-negocio > .campo-raca .campo-extra { margin-top: auto; } }
+
+/* --------------------------------------------------------------------------
+   Dados puxados do cadastro (somente leitura)
+   -------------------------------------------------------------------------- */
+.form-group .campo-auto {
+    background: var(--indigo-50);
+    border-color: var(--indigo-100);
+    color: var(--indigo-900);
+    font-weight: 500;
+    box-shadow: none;
+    text-overflow: ellipsis;
+}
+.form-group .campo-auto:hover { border-color: var(--indigo-100); }
+.form-group .campo-auto:focus { border-color: var(--indigo-600); box-shadow: 0 0 0 3px var(--indigo-100); }
+.form-group .campo-auto::placeholder { color: var(--cinza-600); font-weight: 400; }   /* 6,5:1 sobre o índigo claro */
+
+.ficha-cadastro {
+    margin-top: 20px; padding: 18px 18px 20px;
+    border: 1px solid var(--cor-borda); border-radius: var(--raio-lg);
+    background: var(--cor-superficie-2);
+}
+
+
+/* --------------------------------------------------------------------------
+   Totais calculados (valor do gado, comissão)
+   -------------------------------------------------------------------------- */
+.form-group.total-destaque {
+    flex-direction: row; align-items: center; justify-content: space-between; gap: 12px 24px;
+    margin-top: 20px; padding: 14px 20px;
+    border-radius: var(--raio);
+    background: var(--indigo-50);
+    border: 1px solid var(--indigo-100);
+}
+.total-destaque-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.total-destaque-texto > label { font-size: 13.5px; font-weight: 600; color: var(--indigo-900); }
+.form-group .campo-total {
+    flex: 1 1 220px; width: auto; min-width: 0; height: 40px;
+    padding: 0;
+    background: transparent; border: 0; box-shadow: none;
+    color: var(--indigo-900);
+    font-family: var(--fonte-titulo); font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums; text-align: right;
+}
+.form-group .campo-total:focus { box-shadow: none; }
+.form-group .campo-total:focus-visible { outline: 2px solid var(--indigo-600); outline-offset: 4px; border-radius: var(--raio-sm); }
+.total-destaque .ajuda { color: var(--cor-texto-2); }   /* contraste sobre o índigo claro */
+.form-group .campo-total::placeholder { color: var(--cinza-500); font-weight: 600; } /* texto grande: 4.2:1 */
+
+/* --------------------------------------------------------------------------
+   Autocomplete (cidade, destino, pecuarista)
+   -------------------------------------------------------------------------- */
+.autocomplete-wrapper { position: relative; width: 100%; }
+.autocomplete-list {
+    display: none; /* o JS alterna via style.display */
+    position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
+    max-height: 264px; overflow-y: auto; padding: 6px;
+    background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--raio);
+    box-shadow: var(--sombra-md);
+}
+.autocomplete-item {
+    padding: 9px 12px; border-radius: 7px;
+    font-size: 14px; color: var(--cinza-800); cursor: pointer;
+    transition: background-color var(--transicao), color var(--transicao);
+}
+.autocomplete-item:hover, .autocomplete-item:active { background: var(--verde-50); color: var(--verde-800); }
+
+/* --------------------------------------------------------------------------
+   Anexos: área de seleção e lista
+   -------------------------------------------------------------------------- */
+.upload-area {
+    position: relative;
+    display: flex; align-items: center; gap: 16px;
+    min-height: 96px; padding: 18px 20px;
+    border: 1.5px dashed var(--cinza-300); border-radius: var(--raio-lg);
+    background: var(--cor-superficie-2);
+    transition: border-color var(--transicao), background-color var(--transicao), box-shadow var(--transicao);
+}
+.upload-area:hover { border-color: var(--verde-600); background: var(--verde-50); }
+.upload-area:focus-within { border-color: var(--verde-600); box-shadow: var(--anel-foco); }
+.upload-icone {
+    display: grid; place-items: center; flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 12px;
+    background: #fff; border: 1px solid var(--cor-borda); color: var(--verde-700); box-shadow: var(--sombra-xs);
+}
+.upload-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upload-texto strong { color: var(--cor-texto); font-size: 14px; font-weight: 600; }
+
+/* O input cobre a área inteira: clicar ou soltar arquivos em qualquer ponto funciona */
+.upload-area input[type="file"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border: 0; border-radius: inherit; background: transparent;
+    color: transparent; font-size: 0; cursor: pointer; outline: none;
+}
+.upload-area input[type="file"]::file-selector-button { display: none; }   /* a área inteira já é o botão "Adicionar arquivos" */
+
+.lista-anexos { display: flex; flex-direction: column; gap: 8px; }
+.lista-anexos:not(:empty) { margin-top: 12px; }
+.item-anexo {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 8px 8px 10px;
+    background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--raio);
+    box-shadow: var(--sombra-xs);
+}
+.item-anexo-icone { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; background: var(--indigo-50); color: var(--indigo-700); }
+.item-anexo-texto { display: flex; align-items: baseline; gap: 10px; flex: 1; min-width: 0; font-size: 13.5px; }
+.item-anexo-texto strong { color: var(--cor-texto); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-anexo-tamanho { flex-shrink: 0; color: var(--cor-texto-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.btn-remover-anexo {
+    display: grid; place-items: center; flex-shrink: 0;
+    width: 32px; height: 32px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--cinza-400); cursor: pointer;
+    transition: background-color var(--transicao), color var(--transicao);
+}
+.btn-remover-anexo:hover { background: var(--perigo-50); color: var(--perigo-700); }
+.btn-remover-anexo:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--perigo-600); color: var(--perigo-700); }
+
+.campo-obs { margin-top: 20px; }
+
+/* --------------------------------------------------------------------------
+   Botão final (registrar): grande e na largura toda
+   -------------------------------------------------------------------------- */
+.barra-acao { margin-top: 20px; }
+#btn-registrar { height: 54px; font-size: 16px; }
+
+/* --------------------------------------------------------------------------
+   Tela de pesagem individual
+   -------------------------------------------------------------------------- */
+.pesos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; }
+.peso-box {
+    display: flex; align-items: center; gap: 4px;
+    height: 42px; padding: 0 4px 0 6px;
+    background: #fff; border: 1px solid var(--cor-borda-forte); border-radius: var(--raio);
+    box-shadow: var(--sombra-xs);
+    transition: border-color var(--transicao), box-shadow var(--transicao), background-color var(--transicao);
+}
+.peso-box:hover { border-color: var(--cinza-400); }
+.peso-box:focus-within { border-color: var(--verde-600); box-shadow: var(--anel-foco); }
+.peso-num {
+    display: grid; place-items: center; flex-shrink: 0;
+    min-width: 30px; height: 26px; padding: 0 6px; border-radius: 7px;
+    background: var(--indigo-50); color: var(--indigo-700);
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+    transition: background-color var(--transicao), color var(--transicao);
+}
+.peso-box:has(.peso-input:not(:placeholder-shown)) { border-color: var(--indigo-200); background: var(--cor-superficie-2); }
+.peso-box:has(.peso-input:not(:placeholder-shown)) .peso-num { background: var(--indigo-900); color: #fff; }
+.peso-box:has(.peso-input:focus) { border-color: var(--verde-600); box-shadow: var(--anel-foco); }   /* foco vence o estado preenchido */
+.peso-input {
+    flex: 1; min-width: 0; width: 100%; height: 100%; padding: 0 6px;
+    border: 0; background: transparent; outline: none;
+    font-size: 14px; font-weight: 500; color: var(--cor-texto); font-variant-numeric: tabular-nums; text-align: right;
+}
+.peso-input, .btn-adicionar-mais { scroll-margin-bottom: 170px; }   /* altura do .rodape-pesagem fixo + folga */
+.peso-input::placeholder { color: var(--cinza-400); font-weight: 400; }
+.peso-input::-webkit-outer-spin-button, .peso-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.peso-input { -moz-appearance: textfield; appearance: textfield; }
+
+.btn-adicionar-mais {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; height: 46px; margin-top: 16px;
+    border: 1.5px dashed var(--cinza-300); border-radius: var(--raio);
+    background: transparent; color: var(--indigo-700);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: border-color var(--transicao), background-color var(--transicao), color var(--transicao);
+}
+.btn-adicionar-mais:hover { border-color: var(--indigo-600); background: var(--indigo-50); color: var(--indigo-900); }
+.btn-adicionar-mais:focus-visible { outline: none; box-shadow: var(--anel-foco-forte); border-color: var(--verde-600); }
+
+/* Rodapé fixo com totais e ações */
+.rodape-pesagem {
+    position: sticky; bottom: 16px; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap;
+    margin-top: 16px; padding: 12px 12px 12px 12px;
+    background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--cor-borda); border-radius: var(--raio-lg);
+    box-shadow: var(--sombra-md);
+}
+.rodape-pesagem-totais { display: flex; gap: 10px; }
+.rodape-pesagem .indicador { min-width: 156px; padding: 8px 14px; gap: 0; }
+.indicador-unidade { font-family: var(--fonte-ui); font-size: 13px; font-weight: 600; color: var(--cor-texto-3); }
+.rodape-pesagem-acoes { display: flex; gap: 8px; }
+
+@media (min-width: 601px) { .pagina-acoes .btn-fantasma:last-child { margin-right: -12px; } }
+
+/* --------------------------------------------------------------------------
+   Histórico
+   -------------------------------------------------------------------------- */
+/* Cabeçalho do card com os filtros à direita (o card usa .card-tabela do base.css) */
+.card-tabela > .historico-barra { align-items: flex-end; gap: 16px 24px; }
+.historico-barra > .form-grid { align-items: end; }
+.filtros { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.filtros .form-group { width: 188px; }
+.tabela-historico { min-width: 600px; }
+.tabela-historico td:not(.celula-vazia) { white-space: nowrap; }
+.tabela-historico td:nth-child(2):not(.celula-vazia), .tabela-historico td:nth-child(4) { white-space: normal; min-width: 150px; }
+/* Com a barra lateral e pouca largura (961–1180px), Local também quebra para os números caberem */
+@media (min-width: 961px) and (max-width: 1180px) {
+    .tabela-historico td:nth-child(3) { white-space: normal; }
+    .tabela-historico td:nth-child(2):not(.celula-vazia), .tabela-historico td:nth-child(4) { min-width: 130px; }
+}
+/* A coluna Data fica fixa durante a rolagem horizontal */
+.tabela-historico thead th:first-child,
+.tabela-historico tbody td:first-child:not(.celula-vazia) { position: sticky; left: 0; }
+.tabela-historico thead th:first-child { z-index: 2; box-shadow: inset -1px 0 0 var(--cor-borda); }
+.tabela-historico tbody td:first-child:not(.celula-vazia) { z-index: 1; background: var(--cor-superficie); box-shadow: inset -1px 0 0 var(--cinza-100); }
+.tabela-historico tbody tr:hover td:first-child:not(.celula-vazia) { background: var(--cinza-25); }
+/* Lista vazia / carregando: a tabela não precisa de largura mínima, a mensagem fica centralizada na área visível */
+.tabela-historico:has(td.celula-vazia) { min-width: 0; }
+
+/* --------------------------------------------------------------------------
+   Responsivo
+   -------------------------------------------------------------------------- */
+/* 4 colunas só quando cada coluna tem ~180px: com a barra lateral (>960px) isso exige ~1180px de tela */
+@media (min-width: 961px) and (max-width: 1180px), (max-width: 860px) {
+    .form-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .col-3 { grid-column: span 2; }
+    .col-2.encolhe { grid-column: span 1; }
+}
+
+@media (max-width: 640px) {
+    .form-grid-negocio { grid-template-columns: minmax(0, 1fr); }
+    .form-grid-negocio > .campo-raca { grid-column: auto; grid-row: auto; }
+}
+
+@media (max-width: 600px) {
+    .card-cabecalho > .btn { width: 100%; }
+
+    .form-grid-4 { grid-template-columns: minmax(0, 1fr); }
+    .col-2, .col-3, .col-2.encolhe { grid-column: auto; }
+
+    .ficha-cadastro { padding: 14px; }
+
+    .form-group.total-destaque { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; }
+    .form-group .campo-total { flex: none; width: 100%; text-align: left; }
+
+    .upload-area { flex-direction: column; text-align: center; gap: 10px; padding: 22px 16px; }
+    .upload-texto { align-items: center; }
+
+
+    .pesos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .peso-box { height: 44px; padding: 0 2px 0 5px; gap: 2px; }
+    .peso-num { min-width: 26px; padding: 0 4px; font-size: 11.5px; }
+    .peso-input { padding: 0 4px 0 2px; font-size: 13.5px; }
+    .rodape-pesagem { bottom: 10px; padding: 8px; gap: 8px; }
+    .rodape-pesagem .indicador { padding: 6px 12px; }
+    .rodape-pesagem .indicador-valor { font-size: 17px; }
+    .rodape-pesagem-totais, .rodape-pesagem-acoes { width: 100%; }
+    .rodape-pesagem .indicador { flex: 1; min-width: 0; }
+    .rodape-pesagem-acoes .btn { flex: 1 1 auto; min-width: 0; }
+    .rodape-pesagem-acoes .btn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+    /* "Voltar ao lançamento" alinhado à coluna do título (compensa o padding do botão fantasma) */
+    .pagina-acoes .btn-fantasma { margin-left: -10px; padding: 0 10px; }
+
+    .filtros { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+    .filtros .form-group { width: auto; }
+}
+
+/* Celulares estreitos (360px e menores): rótulos curtos para as abas e os botões da pesagem caberem */
+@media (max-width: 380px) {
+    .rodape-pesagem-acoes .btn { padding: 0 12px; }
+    .pesos-grid { gap: 6px; }
+    .peso-num { min-width: 22px; padding: 0 3px; font-size: 11px; }
+    .peso-input { font-size: 13px; padding: 0 3px 0 1px; }
+    .rodape-pesagem .indicador { padding: 4px 10px; }
+    .rodape-pesagem .indicador-rotulo { font-size: 11px; }
+}
+@media (max-width: 340px) {
+    .pesos-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
+/* Rascunho local do pesador */
+.rascunho-pesador p { margin: 0 0 12px; }
+.rascunho-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.rascunho-erro { color: #a31c1c; font-weight: 600; }

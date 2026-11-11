@@ -5,6 +5,15 @@ Sistema do Grupo Vilela de Queiroz para solicitar e emitir Ordens de Compra (OC)
 - **Site:** páginas estáticas no GitHub Pages: https://wiziackmatheeus-sys.github.io/gvq-ordens-de-compra/
 - **Banco e login:** Firebase (Authentication + Firestore), plano gratuito. As permissões ficam em [`firestore.rules`](firestore.rules).
 
+## Dois ambientes: Compra de Gado e Ordens de Compra
+
+O site junta os dois sistemas com um login só ([`index.html`](index.html)). Depois de entrar, a pessoa escolhe o ambiente em [`pages/ambientes.html`](pages/ambientes.html).
+
+- **Ordens de Compra:** este sistema (`pages/`, `js/`, `css/`), Firebase `gvq-ordens-de-compra`.
+- **Compra de Gado:** parte web do [gvq-sistema-integrado](https://github.com/wiziackmatheeus-sys/gvq-sistema-integrado), copiada para [`compras/`](compras/) (commit `bb98dfd`). Continua no Firebase `gvq-sistema-compras`, como app com o nome `compras`. As regras, as functions e os testes dele continuam no repositório original, que é de onde se publica o backend.
+- **Login:** o mesmo usuário e senha entram nos dois Firebase ao mesmo tempo. O ambiente em que a pessoa não tem acesso (ou tem outra senha) aparece bloqueado. Na Compra de Gado, ele traz os links para solicitar cadastro ou entrar com outra senha ([`compras/cadastro.html`](compras/cadastro.html)).
+- Voltar ao login (pelo **Sair** de qualquer ambiente) encerra as duas sessões. **Trocar ambiente**, na barra lateral, volta para a escolha.
+
 ## Acesso
 
 Login simples: usuário (`nome.sobrenome`, gerado pelo nome) e senha de pelo menos 8 caracteres. Cada pessoa cria o próprio acesso e começa como **Solicitante**; só o **Master** promove a **Analista** ou desativa, na aba Usuários. O cargo Master é fixo por login (`matheus.souza` e `matheus.silveira`, em `js/listas.js` e `firestore.rules`). Não há e-mail nem redefinição de senha: quem esquece tem a conta apagada no Console do Firebase e cria de novo (veja [docs/CONFIGURAR-FIREBASE.md](docs/CONFIGURAR-FIREBASE.md)).

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GVQ - Compra de Gado</title>
+    <meta name="description" content="Sistema de compras do Grupo Vilela de Queiroz: romaneios, pesagens, pecuaristas e destinos.">
+    <meta name="theme-color" content="#12004F">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+    <main class="auth">
+        <section class="auth-marca" aria-hidden="true">
+            <img class="auth-logo" src="assets/img/logo-gvq-negativo.png" alt="">
+        </section>
+
+        <section class="auth-area">
+            <div class="auth-card">
+                <img class="auth-logo-mobile" src="assets/img/logo-gvq.png" alt="GVQ — Grupo Vilela de Queiroz" onerror="this.style.display='none'">
+
+                <h1 class="sr-only">GVQ — Sistema de Compras</h1>
+
+                <div class="tabs" aria-label="Acesso ao sistema">
+                    <button type="button" id="aba-login" class="tab active" aria-pressed="true" aria-controls="login-form">Entrar</button>
+                    <button type="button" id="aba-cadastro" class="tab" aria-pressed="false" aria-controls="cadastro-form">Cadastrar</button>
+                </div>
+
+                <div id="login-form" class="form-content active">
+                    <form id="form-login" class="auth-form">
+                        <div class="form-group">
+                            <label for="login_usuario">Usuário</label>
+                            <div class="campo-icone">
+                                <svg class="icon"><use href="assets/img/icones.svg#usuario"></use></svg>
+                                <input type="text" id="login_usuario" required autocomplete="username">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="login_senha">Senha</label>
+                            <div class="campo-icone">
+                                <svg class="icon"><use href="assets/img/icones.svg#cadeado"></use></svg>
+                                <input type="password" id="login_senha" required autocomplete="current-password">
+                            </div>
+                        </div>
+                        <button type="submit" id="btn-entrar" class="btn btn-primario btn-lg btn-bloco">Entrar</button>
+                    </form>
+                </div>
+
+                <div id="cadastro-form" class="form-content">
+                    <form id="form-cadastro" class="auth-form">
+                        <div class="form-group">
+                            <label for="cadastro_nome">Nome completo</label>
+                            <input id="cadastro_nome" required minlength="3" maxlength="100" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="cadastro_usuario">Usuário</label>
+                            <input id="cadastro_usuario" readonly autocomplete="username" aria-describedby="dica-usuario">
+                            <small id="dica-usuario">Gerado automaticamente</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="cadastro_perfil">Perfil</label>
+                            <select id="cadastro_perfil" required>
+                                <option value="">Selecione...</option>
+                                <option value="escritorio">Escritório</option>
+                                <option value="originador">Originador</option>
+                                <option value="pesador">Pesador</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cadastro_senha">Senha</label>
+                            <input type="password" id="cadastro_senha" required minlength="6" maxlength="128" autocomplete="new-password">
+                        </div>
+                        <p class="user-hint">Seu cadastro será analisado pelo escritório. O acesso será liberado após a aprovação, para todos os perfis.</p>
+                        <button type="submit" id="btn-cadastrar" class="btn btn-primario btn-lg btn-bloco">Solicitar cadastro</button>
+                    </form>
+                </div>
+                <p id="mensagem-acesso" role="status" aria-live="polite" hidden></p>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>
+
+

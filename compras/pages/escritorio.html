@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GVQ - Painel do Escritório</title>
+    <meta name="theme-color" content="#12004F">
+    <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/escritorio.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-marca">
+                <img class="sidebar-logo" src="../assets/img/logo-gvq-negativo.png" alt="GVQ — Grupo Vilela de Queiroz" onerror="this.style.display='none'">
+            </div>
+            <nav class="nav" aria-label="Menu principal">
+                <button type="button" id="btn-tab-romaneios" class="nav-item aba-menu ativa" aria-current="page" onclick="mostrarTela('romaneios')"><svg class="icon"><use href="../assets/img/icones.svg#romaneio"></use></svg><span>Compras</span></button>
+                <button type="button" id="btn-tab-pecuaristas" class="nav-item aba-menu" onclick="mostrarTela('pecuaristas')"><svg class="icon"><use href="../assets/img/icones.svg#pecuaristas"></use></svg><span>Pecuaristas</span></button>
+                <button type="button" id="btn-tab-destinos" class="nav-item aba-menu" onclick="mostrarTela('destinos')"><svg class="icon"><use href="../assets/img/icones.svg#destino"></use></svg><span>Destinos</span></button>
+                <button type="button" id="btn-tab-usuarios" class="nav-item aba-menu" onclick="mostrarTela('usuarios')"><svg class="icon"><use href="../assets/img/icones.svg#usuario"></use></svg><span>Usuários</span></button>
+            </nav>
+            <div class="sidebar-rodape">
+                <div class="usuario">
+                    <span class="avatar"><svg class="icon icon-sm"><use href="../assets/img/icones.svg#usuario"></use></svg></span>
+                    <span class="usuario-texto">
+                        <span class="bem-vindo" id="nome-usuario">Carregando...</span>
+                    </span>
+                </div>
+                <a class="btn-sair btn-ambiente" href="../../pages/ambientes.html"><svg class="icon"><use href="../assets/img/icones.svg#voltar"></use></svg><span>Trocar ambiente</span></a>
+                <button type="button" class="btn-sair" onclick="sair()"><svg class="icon"><use href="../assets/img/icones.svg#sair"></use></svg><span>Sair</span></button>
+            </div>
+        </aside>
+
+        <main class="conteudo">
+            <div class="conteudo-inner">
+
+                <!-- Registros de compra -->
+                <section id="tela-romaneios" class="tela" aria-labelledby="titulo-romaneios">
+                    <div class="tela-encaixada">
+                        <header class="pagina-cabecalho">
+                            <div>
+                                <h1 class="pagina-titulo" id="titulo-romaneios">Compras</h1>
+                            </div>
+                            <div class="pagina-acoes">
+                                <button type="button" class="btn btn-primario" onclick="exportarExcelGeral()"><svg class="icon"><use href="../assets/img/icones.svg#planilha"></use></svg><span>Exportar selecionados</span></button>
+                                <button type="button" class="btn btn-secundario" onclick="exportarExcelPesos()"><svg class="icon"><use href="../assets/img/icones.svg#balanca"></use></svg><span>Exportar pesos</span></button>
+                            </div>
+                        </header>
+
+                        <section class="card" aria-label="Filtros de compras">
+                            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));">
+                                <div class="form-group"><label for="filtro-codigo">Código da compra</label><input id="filtro-codigo" type="search" placeholder="Buscar ordem de compra"></div>
+                                <div class="form-group"><label for="filtro-texto">Buscar pecuarista ou local</label><input id="filtro-texto" type="search" placeholder="Nome, cidade ou raça"></div>
+                                <div class="form-group"><label for="filtro-fazenda">Fazenda de destino</label><select id="filtro-fazenda"><option value="">Todas</option></select></div>
+                                <div class="form-group"><label for="filtro-originador">Originador</label><select id="filtro-originador"><option value="">Todos</option></select></div>
+                                <div class="form-group"><label for="filtro-etapa">Etapa</label><select id="filtro-etapa"><option value="">Todas</option><option value="recebida">Recebida</option><option value="em_andamento">Em andamento</option><option value="finalizada">Finalizada</option></select></div>
+                                <div class="form-group"><label for="filtro-mes">Mês da compra</label><input id="filtro-mes" type="month"></div>
+                            </div>
+                            <button type="button" class="btn btn-fantasma btn-sm" id="limpar-filtros">Limpar filtros</button>
+                            <span id="resultado-filtros" class="texto-suave" role="status"></span>
+                        </section>
+
+                        <section class="card card-tabela card-registros">
+                            <div class="tabela-wrap tabela-registros">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th class="col-chk"><input type="checkbox" id="chkAll" class="chk-todos" title="Selecionar todos" aria-label="Selecionar todos os registros" onclick="document.querySelectorAll('.chk-export').forEach(c => c.checked = this.checked)"></th>
+                                            <th>Data</th>
+                                            <th>Pecuarista</th>
+                                            <th>Originador</th>
+                                            <th>Etapa do escritório</th>
+                                            <th class="col-num">Cabeças</th>
+                                            <th class="col-num">Peso (kg)</th>
+                                            <th class="col-num">Preço</th>
+                                            <th class="col-num">Valor total</th>
+                                            <th class="col-num">Comissão</th>
+                                            <th>Raça</th>
+                                            <th>Origem</th>
+                                            <th>Destino</th>
+                                            <th>Anexos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-romaneios">
+                                        <tr><td colspan="14" class="celula-vazia">Conectando ao banco de dados...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="tabela-rodape" aria-hidden="true">
+                                <span class="contagem-registros"></span>
+                                <span class="contagem-selecionados"></span>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section id="tela-usuarios" class="tela" style="display: none;" aria-labelledby="titulo-usuarios">
+                    <header class="pagina-cabecalho"><div><h1 class="pagina-titulo" id="titulo-usuarios">Usuários</h1></div></header>
+                    <section class="card"><h2 class="card-titulo">Criar conta</h2><p class="texto-suave">A conta receberá uma senha temporária e deverá trocá-la no primeiro acesso.</p>
+                        <form id="form-criar-conta"><div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));">
+                            <div class="form-group"><label for="conta-nome">Nome completo</label><input id="conta-nome" required minlength="3" maxlength="100" autocomplete="off"></div>
+                            <div class="form-group"><label for="conta-login">Usuário</label><input id="conta-login" readonly autocomplete="off"></div>
+                            <div class="form-group"><label for="conta-perfil">Perfil</label><select id="conta-perfil" required><option value="escritorio">Escritório</option><option value="originador">Originador</option><option value="pesador" selected>Pesador</option></select></div>
+                            <div class="form-group" id="grupo-conta-originador"><label for="conta-originador">Originador responsável</label><select id="conta-originador" required><option value="">Selecione o originador...</option></select></div>
+                        </div><div class="form-acoes"><button id="btn-criar-conta" type="submit" class="btn btn-primario">Criar conta e gerar senha</button></div></form>
+                    </section>
+                    <section id="resultado-conta" class="card" hidden><h2 class="card-titulo">Acesso temporário</h2><p>Usuário: <strong id="login-temporario"></strong></p><div class="form-group"><label for="senha-temporaria">Senha temporária</label><input id="senha-temporaria" readonly autocomplete="off"></div><p class="texto-suave">Entregue os dados à pessoa. A senha não será exibida novamente após fechar este aviso.</p><button id="ocultar-credenciais" type="button" class="btn btn-secundario">Fechar e ocultar senha</button></section>
+                    <section class="card"><div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));">
+                        <div class="form-group"><label for="busca-usuarios">Buscar usuário ou originador</label><input type="search" id="busca-usuarios"></div>
+                        <div class="form-group"><label for="filtro-perfil-usuarios">Perfil</label><select id="filtro-perfil-usuarios"><option value="">Todos</option><option value="escritorio">Escritório</option><option value="originador">Originador</option><option value="pesador">Pesador</option></select></div>
+                        <div class="form-group"><label for="filtro-situacao-usuarios">Situação</label><select id="filtro-situacao-usuarios"><option value="">Todas</option><option value="aprovado">Aprovado</option><option value="pendente">Aguardando aprovação</option><option value="senha">Troca de senha pendente</option></select></div>
+                    </div></section>
+                    <section class="card card-tabela card-lista"><div class="tabela-wrap tabela-lista"><table><thead><tr><th>Nome / usuário</th><th>Perfil</th><th>Situação</th><th>Originador responsável</th><th>Ação</th></tr></thead><tbody id="tbody-usuarios"><tr><td colspan="5" class="celula-vazia">Carregando usuários...</td></tr></tbody></table></div></section>
+                </section>
+
+                <section id="tela-historico-compra" class="tela" style="display: none;">
+                    <header class="pagina-cabecalho"><div><h1 class="pagina-titulo">Histórico da compra</h1></div><div class="pagina-acoes"><button type="button" class="btn btn-fantasma" onclick="mostrarTela('romaneios')">Voltar</button></div></header>
+                    <section class="card card-tabela card-lista">
+                        <div class="card-cabecalho"><h2 class="card-titulo" id="historico-compra-pecuarista"></h2></div>
+                        <div class="tabela-wrap tabela-lista"><table><thead><tr><th>Data e hora</th><th>Alteração</th><th>Responsável</th><th>Revisão</th></tr></thead><tbody id="tbody-historico-compra"><tr><td colspan="4" class="celula-vazia">Carregando histórico...</td></tr></tbody></table></div>
+                    </section>
+                </section>
+
+                <!-- Pecuaristas -->
+                <section id="tela-pecuaristas" class="tela" style="display: none;" aria-labelledby="titulo-pecuaristas">
+                    <header class="pagina-cabecalho">
+                        <div>
+                            <h1 class="pagina-titulo" id="titulo-pecuaristas">Pecuaristas</h1>
+                        </div>
+                    </header>
+
+                    <section class="card card-cadastro">
+                        <div class="card-cabecalho">
+                            <div class="card-cabecalho-texto">
+                                <span class="secao-num"><svg class="icon icon-sm"><use href="../assets/img/icones.svg#mais"></use></svg></span>
+                                <div>
+                                    <h2 class="card-titulo">Novo pecuarista</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid form-grid-4">
+                            <div class="form-group">
+                                <label for="novo_pec_nome">Nome</label>
+                                <input type="text" id="novo_pec_nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_pec_doc">CPF / CNPJ</label>
+                                <input type="text" id="novo_pec_doc" placeholder="000.000.000-00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_pec_uf">Estado</label>
+                                <select id="novo_pec_uf" onchange="carregarCidades('novo_pec_uf', 'lista_cidades_pec', 'novo_pec_cidade')" required><option value="">Selecione...</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_pec_cidade">Cidade</label>
+                                <input type="text" id="novo_pec_cidade" list="lista_cidades_pec" onchange="validarSelecaoDaLista(this, 'lista_cidades_pec')" placeholder="Selecione o estado primeiro" autocomplete="off" required>
+                                <datalist id="lista_cidades_pec"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="form-grid form-grid-3">
+                            <div class="form-group ocupa-2">
+                                <label for="novo_pec_banco">Banco</label>
+                                <div class="campo-icone">
+                                    <svg class="icon"><use href="../assets/img/icones.svg#banco"></use></svg>
+                                    <input type="text" id="novo_pec_banco" list="lista_bancos" placeholder="Digite o nome do banco..." autocomplete="off" required>
+                                </div>
+                                <datalist id="lista_bancos"></datalist>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_pec_agencia">Agência</label>
+                                <input type="text" id="novo_pec_agencia" placeholder="0000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_pec_conta">Conta</label>
+                                <input type="text" id="novo_pec_conta" placeholder="00000-0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-acoes">
+                            <button type="button" class="btn btn-primario" id="btn-salvar-pec" onclick="adicionarPecuarista()">Salvar pecuarista</button>
+                        </div>
+                    </section>
+
+                    <div class="form-group"><label for="busca-pecuaristas">Buscar pecuarista, documento ou cidade</label><input id="busca-pecuaristas" type="search"></div>
+                    <section class="card card-tabela card-lista">
+                        <div class="card-cabecalho">
+                            <div class="card-cabecalho-texto">
+                                <span class="secao-num secao-num-indigo"><svg class="icon icon-sm"><use href="../assets/img/icones.svg#pecuaristas"></use></svg></span>
+                                <div>
+                                    <h2 class="card-titulo">Cadastrados</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tabela-wrap tabela-lista tabela-pecuaristas">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Documento</th>
+                                        <th>Cidade</th>
+                                        <th>Banco</th>
+                                        <th>Agência</th>
+                                        <th>Conta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-pecuaristas">
+                                    <tr><td colspan="6" class="celula-vazia">Sincronizando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tabela-rodape" aria-hidden="true">
+                            <span class="contagem-itens" data-singular="pecuarista" data-plural="pecuaristas"></span>
+                        </div>
+                    </section>
+                </section>
+
+                <!-- Destinos -->
+                <section id="tela-destinos" class="tela" style="display: none;" aria-labelledby="titulo-destinos">
+                    <header class="pagina-cabecalho">
+                        <div>
+                            <h1 class="pagina-titulo" id="titulo-destinos">Destinos</h1>
+                        </div>
+                    </header>
+
+                    <section class="card card-cadastro">
+                        <div class="card-cabecalho">
+                            <div class="card-cabecalho-texto">
+                                <span class="secao-num"><svg class="icon icon-sm"><use href="../assets/img/icones.svg#mais"></use></svg></span>
+                                <div>
+                                    <h2 class="card-titulo">Novo destino</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid form-grid-3">
+                            <div class="form-group ocupa-2">
+                                <label for="novo_dest_nome">Nome</label>
+                                <input type="text" id="novo_dest_nome" placeholder="Digite o nome da fazenda..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_dest_uf">Estado</label>
+                                <select id="novo_dest_uf" onchange="carregarCidades('novo_dest_uf', 'lista_cidades_dest', 'novo_dest_cidade')" required><option value="">Selecione...</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="novo_dest_cidade">Cidade</label>
+                                <input type="text" id="novo_dest_cidade" list="lista_cidades_dest" onchange="validarSelecaoDaLista(this, 'lista_cidades_dest')" placeholder="Selecione o estado primeiro" autocomplete="off" required>
+                                <datalist id="lista_cidades_dest"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="form-acoes">
+                            <button type="button" class="btn btn-primario" id="btn-salvar-dest" onclick="adicionarDestino()">Salvar destino</button>
+                        </div>
+                    </section>
+
+                    <div class="form-group"><label for="busca-destinos">Buscar destino ou cidade</label><input id="busca-destinos" type="search"></div>
+                    <section class="card card-tabela card-lista">
+                        <div class="card-cabecalho">
+                            <div class="card-cabecalho-texto">
+                                <span class="secao-num secao-num-indigo"><svg class="icon icon-sm"><use href="../assets/img/icones.svg#destino"></use></svg></span>
+                                <div>
+                                    <h2 class="card-titulo">Cadastrados</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tabela-wrap tabela-lista">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="col-nome-destino">Nome</th>
+                                        <th>Cidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-destinos">
+                                    <tr><td colspan="2" class="celula-vazia">Sincronizando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tabela-rodape" aria-hidden="true">
+                            <span class="contagem-itens" data-singular="destino" data-plural="destinos"></span>
+                        </div>
+                    </section>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../js/escritorio.js"></script>
+</body>
+</html>
+

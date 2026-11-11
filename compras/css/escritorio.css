@@ -1,0 +1,189 @@
+/* ==========================================================================
+   Painel do Escritório (pages/escritorio.html)
+   Usa o design system de base.css; aqui ficam só os ajustes desta página.
+   ========================================================================== */
+
+/* A tabela de registros é larga: o conteúdo ocupa mais espaço que nas outras páginas */
+.conteudo-inner { max-width: 1320px; }
+
+/* Colunas (as genéricas — .col-num, .col-destaque, .texto-cortado, .celula-dupla — estão no base.css) */
+.col-doc { color: var(--cinza-600); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.col-local { white-space: nowrap; }
+.col-destaque .texto-cortado { max-width: 224px; }
+.col-destino .texto-cortado { max-width: 190px; }
+
+.valor-total { color: var(--verde-700); font-weight: 600; }
+
+/* Anexos: um embaixo do outro, em etiquetas compactas com o nome cortado se for longo */
+.col-anexos br { display: none; }
+.col-anexos .tag-anexo { display: flex; width: max-content; max-width: 196px; height: 20px; padding: 0 9px; gap: 5px; font-size: 11.5px; }
+.col-anexos .tag-anexo + br + .tag-anexo { margin-top: 2px; }
+.tag-anexo .icon { width: 13px; height: 13px; opacity: 0.75; }
+.tag-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tag-link { transition: background-color var(--transicao), color var(--transicao); }
+.tag-link:hover { background: var(--indigo-100); color: var(--indigo-900); }
+.tag-link:focus-visible { outline: 2px solid var(--indigo-600); outline-offset: 1px; }
+
+/* --------------------------------------------------------------------------
+   Registros de compra
+   -------------------------------------------------------------------------- */
+.tabela-registros thead th { white-space: nowrap; z-index: 2; }
+.tabela-registros thead th,
+.tabela-registros tbody td { padding-left: 12px; padding-right: 12px; }
+.tabela-registros tbody td { padding-top: 12px; padding-bottom: 12px; white-space: nowrap; }
+
+/* Coluna de seleção */
+.card-registros {
+    --img-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+    --img-traco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+}
+.card-tabela .col-chk { width: 52px; min-width: 52px; padding-right: 10px; text-align: center; }
+.col-chk input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    display: inline-grid; place-content: center; vertical-align: middle;
+    width: 18px; height: 18px; margin: 0;
+    border: 1.5px solid var(--cinza-400); border-radius: 5px;   /* 3:1 sobre o branco */
+    background: var(--cor-superficie) center / 12px no-repeat;
+    cursor: pointer;
+    transition: border-color var(--transicao), box-shadow var(--transicao);
+}
+.col-chk input[type="checkbox"]:hover { border-color: var(--verde-600); }
+.col-chk input[type="checkbox"]:focus-visible { outline: 2px solid var(--indigo-600); outline-offset: 2px; }   /* o :checked não sobrescreve outline */
+.col-chk input[type="checkbox"]:checked {
+    border-color: var(--verde-700);
+    background-color: var(--verde-700);
+    background-image: var(--img-check);
+}
+
+/* "Selecionar todos" mostra o próprio estado (o onclick usa this.checked); desmarcado com
+   linhas selecionadas, ganha um traço de seleção parcial */
+.card-registros:has(.chk-export:checked) .chk-todos:not(:checked) {
+    border-color: var(--verde-700);
+    background-color: var(--verde-700);
+    background-image: var(--img-traco);
+}
+
+/* Linha selecionada */
+.tabela-registros tbody tr:has(.chk-export:checked) td { background: var(--verde-50); }
+.tabela-registros tbody tr:has(.chk-export:checked) td:first-child { box-shadow: inset 3px 0 0 var(--verde-600); }
+.tabela-registros tbody tr:has(.chk-export:checked) .texto-suave { color: var(--cinza-600); }
+.tabela-registros tbody tr:has(.chk-export:checked) .valor-total { color: var(--verde-800); }
+.tabela-registros tbody tr:has(.chk-export:checked):hover td { background: color-mix(in srgb, var(--verde-50), var(--verde-100)); }
+
+/* Rodapé com contagem (CSS puro: conta as linhas e as caixas marcadas) */
+.card-registros { counter-reset: registros selecionados; }
+.tabela-registros tbody tr:not(:has(.celula-vazia)) { counter-increment: registros; }
+.chk-export:checked { counter-increment: selecionados; }
+
+.card-registros:has(.celula-vazia) .tabela-rodape { display: none; }
+.contagem-registros::before { content: counter(registros) " registros"; font-weight: 500; color: var(--cor-texto-2); }
+.card-registros:has(#tbody-romaneios > tr:only-child) .contagem-registros::before { content: "1 registro"; }
+.contagem-selecionados { display: inline-flex; align-items: center; gap: 8px; }
+.contagem-selecionados::before { content: ""; }
+.card-registros:has(.chk-export:checked) .contagem-selecionados { color: var(--verde-800); font-weight: 600; }
+.card-registros:has(.chk-export:checked) .contagem-selecionados::before { content: counter(selecionados) " selecionados"; }
+.card-registros:has(.chk-export:checked) .contagem-selecionados::after { content: ''; order: -1; width: 8px; height: 8px; border-radius: 50%; background: var(--verde-600); }
+
+/* Sombra das colunas congeladas: sempre visível por padrão; onde o navegador
+   permite animar pela rolagem, ela só aparece depois que a tabela rola */
+@property --sombra-fixa { syntax: '<color>'; inherits: true; initial-value: rgba(18, 0, 79, 0.18); }
+@keyframes revelar-sombra-fixa { from { --sombra-fixa: rgba(18, 0, 79, 0); } to { --sombra-fixa: rgba(18, 0, 79, 0.18); } }
+
+@media (min-width: 961px) {
+    /* Em telas grandes a página inteira cabe na janela: a tabela rola dentro do card,
+       com o cabeçalho fixo e as colunas de seleção e data congeladas à esquerda.
+       100px = espaçamento vertical do .conteudo (36px em cima + 64px embaixo). */
+    .tela-encaixada { display: flex; flex-direction: column; max-height: max(440px, calc(100vh - 100px)); }
+    .tela-encaixada > .pagina-cabecalho { flex: none; }
+    .tela-encaixada > .card-registros { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .card-registros > .card-cabecalho,
+    .card-registros > .tabela-rodape { flex: none; }
+    .card-registros > .tabela-registros { flex: 0 1 auto; min-height: 0; }
+
+    .tabela-registros { scroll-padding-top: 44px; }   /* foco por teclado não fica atrás do cabeçalho fixo */
+    .tabela-registros th:nth-child(-n+2),
+    .tabela-registros td:nth-child(-n+2):not(.celula-vazia) { position: sticky; z-index: 1; background: var(--cor-superficie); }
+    .tabela-registros thead th:nth-child(-n+2) { z-index: 3; background: var(--cinza-50); }
+    .tabela-registros th:first-child, .tabela-registros td:first-child { left: 0; }
+    .tabela-registros th:nth-child(2), .tabela-registros td:nth-child(2) {
+        left: 52px;
+        box-shadow: inset -1px 0 0 var(--cor-borda), 12px 0 12px -9px var(--sombra-fixa);
+    }
+    .tabela-registros tbody tr:hover td:nth-child(-n+2) { background: var(--cinza-25); }
+    .tabela-registros tbody tr:has(.chk-export:checked) td:nth-child(2) { box-shadow: inset -1px 0 0 var(--verde-100), 12px 0 12px -9px var(--sombra-fixa); }
+
+    @supports (animation-timeline: scroll()) {
+        .tabela-registros {
+            --sombra-fixa: rgba(18, 0, 79, 0);
+            scroll-timeline: --rolagem-registros x;
+            animation-name: revelar-sombra-fixa;
+            animation-duration: auto;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: --rolagem-registros;
+            animation-range: 0px 48px;
+        }
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Pecuaristas e Destinos: formulários e listas
+   -------------------------------------------------------------------------- */
+/* Os três grids de cadastro usam as mesmas 4 trilhas, para as colunas se alinharem
+   entre Identificação e Dados bancários e entre os formulários de pecuarista e destino.
+   Os mínimos garantem que "Rio Grande do Norte" e o texto de ajuda da cidade caibam
+   (o Chrome reserva ~20px à direita dos campos com datalist para a setinha da lista).
+   As colunas mudam pela largura do card (container), não da janela.
+   (As classes form-grid-4 / form-grid-3 também são usadas pelo JS para limpar os campos.) */
+.card-cadastro { container-type: inline-size; }
+.form-grid-4,
+.form-grid-3 { grid-template-columns: minmax(240px, 1.6fr) minmax(168px, 1fr) minmax(194px, 1.15fr) minmax(240px, 1.35fr); }
+.form-grid .ocupa-2 { grid-column: span 2; }
+
+@container (max-width: 919.98px) {
+    .form-grid-4,
+    .form-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-grid .ocupa-2 { grid-column: 1 / -1; }
+}
+@container (max-width: 559.98px) {
+    .form-grid-4,
+    .form-grid-3 { grid-template-columns: minmax(0, 1fr); }
+}
+
+.form-acoes {
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px 16px; flex-wrap: wrap;
+    margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--cor-borda);
+}
+.form-acoes .btn { min-width: 176px; }
+
+/* Listas cadastradas (altura máxima, contagem e rodapé vêm do base.css: .tabela-lista / .card-lista) */
+.col-nome-destino { width: 55%; }
+/* Nome e banco com largura mínima: abaixo disso a lista rola na horizontal */
+.tabela-pecuaristas th:nth-child(1) { min-width: 208px; }
+.tabela-pecuaristas th:nth-child(4) { min-width: 192px; }
+/* Documento, banco, agência e conta em uma linha (o banco nunca quebra no hífen); só o nome quebra */
+.tabela-pecuaristas tbody td { white-space: nowrap; }
+.tabela-pecuaristas tbody td:first-child { white-space: normal; }
+
+/* --------------------------------------------------------------------------
+   Responsivo
+   -------------------------------------------------------------------------- */
+@media (max-width: 960px) {
+    /* Área de toque maior para a seleção no celular */
+    .col-chk input[type="checkbox"] { width: 22px; height: 22px; border-radius: 6px; background-size: 14px; }
+}
+
+@media (max-width: 600px) {
+    .form-acoes { flex-direction: column-reverse; align-items: stretch; text-align: center; }
+    .form-acoes .btn { width: 100%; }
+
+}
+
+@media (min-width: 1600px) {
+    /* só a tabela de registros usa a largura toda; formulários e listas mantêm a medida */
+    .conteudo-inner { max-width: none; }
+    #tela-pecuaristas, #tela-destinos { max-width: 1320px; }
+    .tabela-registros thead th, .tabela-registros tbody td { padding-left: 9px; padding-right: 9px; }
+    .col-anexos .tag-anexo { max-width: 180px; }
+    .col-destino .texto-cortado { max-width: 180px; }
+}

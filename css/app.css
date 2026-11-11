@@ -36,7 +36,8 @@ td strong, .col-destaque { color: var(--indigo-900); }
 .nav-item > span:not(.contador) { display: block; min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-item .contador { margin-left: auto; }
 .usuario-perfil { color: rgba(255, 255, 255, 0.55); font-size: 12px; }
-.sidebar .btn-tema:hover { background: rgba(255, 255, 255, 0.06); }
+.sidebar :is(.btn-tema, .btn-ambiente):hover { background: rgba(255, 255, 255, 0.06); }
+.btn-ambiente { text-decoration: none; }
 .contador { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--verde-600); color: #fff; font-size: 11.5px; }
 
 .conteudo { width: 100%; max-width: 1280px; margin: 0 auto; padding: 32px 32px 64px; }

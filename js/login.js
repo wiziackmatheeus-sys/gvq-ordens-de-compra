@@ -1,8 +1,12 @@
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, configurado, emailDoLogin } from "./firebase.js";
+import { auth as authCompras } from "../compras/js/firebase.js";
 import { sugerirLogin } from "./util.js";
 
+// Login único dos dois ambientes: o mesmo usuário e senha entram nas Ordens de Compra (Firebase
+// gvq-ordens-de-compra) e na Compra de Gado (Firebase gvq-sistema-compras). Depois a pessoa
+// escolhe o ambiente em pages/ambientes.html.
 const $ = id => document.getElementById(id);
 const MENSAGENS = {
     'auth/invalid-credential': 'Usuário ou senha incorretos.',
@@ -31,10 +35,14 @@ function mostrarAba(criar) {
 $('aba-entrar').onclick = () => mostrarAba(false);
 $('aba-criar').onclick = () => mostrarAba(true);
 
-// Garante o cadastro no banco e entra. O cadastro fica guardado pelo login: quem cria o acesso
-// pela primeira vez começa como solicitante (o analista promove na aba Usuários); quem recria
+// Chegar ao login (inclusive pelo "Sair" de qualquer ambiente) encerra as duas sessões.
+if (configurado) signOut(auth).catch(() => {});
+signOut(authCompras).catch(() => {});
+
+// Garante o cadastro das Ordens de Compra no banco. O cadastro fica guardado pelo login: quem cria
+// o acesso pela primeira vez começa como solicitante (o analista promove na aba Usuários); quem recria
 // o acesso depois de esquecer a senha retoma o mesmo cadastro, com perfil e histórico.
-async function abrirSistema(user, nome) {
+async function registrarOrdens(user, nome) {
     const login = user.email.split('@')[0];
     const ref = doc(db, 'usuarios', login);
     let snap = await getDoc(ref);
@@ -50,8 +58,9 @@ async function abrirSistema(user, nome) {
         await signOut(auth);
         throw Object.assign(new Error(), { code: 'auth/user-disabled' });
     }
-    location.href = 'pages/app.html';
 }
+
+const irParaAmbientes = () => { location.href = 'pages/ambientes.html'; };
 
 let ocupado = false;
 async function executar(botao, erro, rotulo, acao) {
@@ -75,9 +84,20 @@ async function executar(botao, erro, rotulo, acao) {
 $('form-login').addEventListener('submit', e => {
     e.preventDefault();
     executar('btn-entrar', 'erro-login', 'Entrando...', async () => {
-        const login = $('login_usuario').value.toLowerCase().trim();
-        const { user } = await signInWithEmailAndPassword(auth, emailDoLogin(login), $('login_senha').value);
-        await abrirSistema(user);
+        const email = emailDoLogin($('login_usuario').value.toLowerCase().trim()), senha = $('login_senha').value;
+        // Tenta os dois ao mesmo tempo; basta um dar certo. Quem só tem um dos acessos (ou senhas
+        // diferentes) vê o outro ambiente bloqueado na tela de escolha.
+        const [ordens, compras] = await Promise.allSettled([
+            signInWithEmailAndPassword(auth, email, senha),
+            signInWithEmailAndPassword(authCompras, email, senha)
+        ]);
+        if (ordens.status === 'fulfilled') {
+            try { await registrarOrdens(ordens.value.user); }
+            catch (error) { if (compras.status !== 'fulfilled') throw error; }
+        } else if (compras.status !== 'fulfilled') {
+            throw ordens.reason;
+        }
+        irParaAmbientes();
     });
 });
 
@@ -94,6 +114,7 @@ $('form-cadastro').addEventListener('submit', e => {
         if (senha !== $('cadastro_confirmar').value) throw { mensagem: 'As senhas precisam ser iguais.' };
         const { user } = await createUserWithEmailAndPassword(auth, emailDoLogin(login), senha);
         await updateProfile(user, { displayName: nome }).catch(() => {});
-        await abrirSistema(user, nome);
+        await registrarOrdens(user, nome);
+        irParaAmbientes();
     });
 });
